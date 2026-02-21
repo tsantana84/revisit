@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase/service'
+import { LandingPageClient } from './LandingPageClient'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -146,24 +147,12 @@ export default async function TenantPage() {
             Ganhe pontos toda vez que nos visitar!
           </p>
 
-          <button
-            id="cta-register"
-            data-action="open-register"
-            data-restaurant-id={restaurantId}
-            style={{
-              backgroundColor: '#ffffff',
-              color: primaryColor,
-              border: 'none',
-              borderRadius: '8px',
-              padding: '16px 40px',
-              fontSize: '18px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              letterSpacing: '0.2px',
-            }}
-          >
-            Cadastre-se Gratis
-          </button>
+          {/* Hero CTA — handled by LandingPageClient */}
+          <LandingPageClient
+            restaurantName={restaurant.name}
+            primaryColor={primaryColor}
+            slot="hero-cta"
+          />
         </div>
       </section>
 
@@ -439,31 +428,18 @@ export default async function TenantPage() {
             Cadastre-se agora e ganhe pontos na sua proxima visita!
           </p>
 
-          <button
-            id="cta-register-footer"
-            data-action="open-register"
-            data-restaurant-id={restaurantId}
-            style={{
-              backgroundColor: '#ffffff',
-              color: primaryColor,
-              border: 'none',
-              borderRadius: '8px',
-              padding: '16px 40px',
-              fontSize: '18px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              letterSpacing: '0.2px',
-              marginBottom: '32px',
-            }}
-          >
-            Cadastre-se Gratis
-          </button>
+          {/* Footer CTA — handled by LandingPageClient */}
+          <LandingPageClient
+            restaurantName={restaurant.name}
+            primaryColor={primaryColor}
+            slot="footer-cta"
+          />
 
           <p
             style={{
               fontSize: '14px',
               opacity: 0.7,
-              margin: 0,
+              margin: '32px 0 0',
             }}
           >
             {restaurant.name} — Programa de Fidelidade
