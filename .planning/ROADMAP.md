@@ -29,12 +29,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Every table in the schema has RLS enabled — a CI check fails the build if any table is missing a policy
   3. An owner logging in receives a JWT containing their `restaurant_id` and `role` claims, confirming tenant identity flows from login to every subsequent request
   4. Next.js middleware resolves the correct `restaurant_id` from a URL slug without a per-request database query
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: Database schema — all tables with NUMERIC points columns, BIGINT IDs, RLS enabled at creation
-- [ ] 01-02: Supabase Auth custom JWT hook — embed `restaurant_id` and `role` in access token at login
-- [ ] 01-03: Next.js tenant middleware — slug-to-restaurant_id resolution with caching, request header injection
+- [ ] 01-01-PLAN.md — Database schema, RLS policies, soft-delete views, and seed data
+- [ ] 01-02-PLAN.md — Custom Access Token Hook + SDK-based cross-tenant isolation test suite
+- [ ] 01-03-PLAN.md — Next.js tenant middleware with slug resolution, Supabase client factories
 
 ### Phase 2: Owner Setup
 **Goal**: A restaurant owner can sign up, configure their loyalty program, and have it ready to accept customers
