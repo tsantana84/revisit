@@ -46,6 +46,14 @@ export type RanksState =
     }
   | undefined
 
+export type CardDesignState =
+  | {
+      success?: boolean
+      message?: string
+      imageUrl?: string
+    }
+  | undefined
+
 // ---------------------------------------------------------------------------
 // Schemas
 // ---------------------------------------------------------------------------
@@ -314,4 +322,102 @@ export async function updateRanks(
 
   revalidatePath('/dashboard/owner/settings')
   return { success: true, message: 'Níveis salvos com sucesso' }
+}
+
+// ---------------------------------------------------------------------------
+// saveCardImage — fetches AI-generated image and uploads to Supabase Storage
+// ---------------------------------------------------------------------------
+
+export async function saveCardImage(
+  prevState: CardDesignState,
+  formData: FormData
+): Promise<CardDesignState> {
+  const auth = await getAuthenticatedOwner()
+  if ('error' in auth) {
+    return { message: auth.error }
+  }
+
+  const imageUrl = formData.get('imageUrl') as string | null
+
+  if (!imageUrl) {
+    return { message: 'URL da imagem não fornecida' }
+  }
+
+  const { supabase, restaurantId } = auth
+
+  // Fetch image bytes from the temporary OpenAI URL
+  let imageBuffer: ArrayBuffer
+  try {
+    const res = await fetch(imageUrl)
+    if (!res.ok) {
+      return { message: 'Erro ao baixar imagem gerada' }
+    }
+    imageBuffer = await res.arrayBuffer()
+  } catch {
+    return { message: 'Erro ao baixar imagem gerada' }
+  }
+
+  const path = `${restaurantId}/card.png`
+
+  const { error: uploadError } = await supabase.storage
+    .from('restaurant-logos')
+    .upload(path, imageBuffer, {
+      upsert: true,
+      contentType: 'image/png',
+    })
+
+  if (uploadError) {
+    return { message: `Erro ao enviar imagem: ${uploadError.message}` }
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from('restaurant-logos').getPublicUrl(path)
+
+  // Append cache-buster so browsers pick up new image
+  const urlWithCacheBust = `${publicUrl}?t=${Date.now()}`
+
+  const { error: updateError } = await supabase
+    .from('restaurants')
+    .update({ card_image_url: urlWithCacheBust })
+    .eq('id', restaurantId)
+
+  if (updateError) {
+    return { message: `Erro ao salvar URL do cartão: ${updateError.message}` }
+  }
+
+  revalidatePath('/dashboard/owner/settings')
+  return { success: true, message: 'Design do cartão salvo com sucesso' }
+}
+
+// ---------------------------------------------------------------------------
+// removeCardImage — removes card image from storage and clears URL
+// ---------------------------------------------------------------------------
+
+export async function removeCardImage(
+  prevState: CardDesignState,
+  formData: FormData
+): Promise<CardDesignState> {
+  const auth = await getAuthenticatedOwner()
+  if ('error' in auth) {
+    return { message: auth.error }
+  }
+
+  const { supabase, restaurantId } = auth
+
+  const path = `${restaurantId}/card.png`
+
+  await supabase.storage.from('restaurant-logos').remove([path])
+
+  const { error: updateError } = await supabase
+    .from('restaurants')
+    .update({ card_image_url: null })
+    .eq('id', restaurantId)
+
+  if (updateError) {
+    return { message: `Erro ao remover design: ${updateError.message}` }
+  }
+
+  revalidatePath('/dashboard/owner/settings')
+  return { success: true, message: 'Design do cartão removido' }
 }

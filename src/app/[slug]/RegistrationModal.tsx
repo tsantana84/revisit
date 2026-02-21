@@ -21,35 +21,9 @@ function formatPhone(raw: string): string {
 interface RegistrationModalProps {
   restaurantName: string
   primaryColor: string
+  cardImageUrl?: string | null
   isOpen: boolean
   onClose: () => void
-}
-
-// ---------------------------------------------------------------------------
-// Submit button with pending state
-// ---------------------------------------------------------------------------
-
-function SubmitButton({ primaryColor, isPending }: { primaryColor: string; isPending: boolean }) {
-  return (
-    <button
-      type="submit"
-      disabled={isPending}
-      style={{
-        backgroundColor: isPending ? '#999' : primaryColor,
-        color: '#ffffff',
-        border: 'none',
-        borderRadius: '8px',
-        padding: '14px 24px',
-        fontSize: '17px',
-        fontWeight: '700',
-        cursor: isPending ? 'not-allowed' : 'pointer',
-        width: '100%',
-        transition: 'background-color 0.2s',
-      }}
-    >
-      {isPending ? 'Cadastrando...' : 'Cadastrar'}
-    </button>
-  )
 }
 
 // ---------------------------------------------------------------------------
@@ -59,6 +33,7 @@ function SubmitButton({ primaryColor, isPending }: { primaryColor: string; isPen
 export function RegistrationModal({
   restaurantName,
   primaryColor,
+  cardImageUrl,
   isOpen,
   onClose,
 }: RegistrationModalProps) {
@@ -68,7 +43,6 @@ export function RegistrationModal({
   const [phoneDigits, setPhoneDigits] = useState('')
   const [isIOS, setIsIOS] = useState(false)
 
-  // Open / close dialog
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return
@@ -79,7 +53,6 @@ export function RegistrationModal({
     }
   }, [isOpen])
 
-  // iOS detection (only after mount — navigator is not available on server)
   useEffect(() => {
     const ua = navigator.userAgent
     setIsIOS(/iPhone|iPad|iPod/.test(ua))
@@ -93,7 +66,6 @@ export function RegistrationModal({
   }
 
   function handleClose() {
-    // Reset phone display when closing
     setPhoneDisplay('')
     setPhoneDigits('')
     onClose()
@@ -102,176 +74,87 @@ export function RegistrationModal({
   const isSuccess = state?.step === 'success'
   const isError = state?.step === 'error'
 
+  const inputClasses = (hasError: boolean) =>
+    `w-full px-4 py-3.5 border-[1.5px] rounded-xl text-base text-text-primary outline-none transition-all duration-200 bg-surface-secondary/50 placeholder:text-text-muted/50 ${
+      hasError
+        ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10'
+        : 'border-transparent focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/10 focus:bg-white'
+    }`
+
   return (
     <dialog
       ref={dialogRef}
       onClose={handleClose}
-      style={{
-        border: 'none',
-        borderRadius: '16px',
-        padding: 0,
-        width: '100%',
-        maxWidth: '440px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-        // Remove default dialog styles
-        background: 'transparent',
-      }}
+      className="rounded-3xl w-full max-w-[420px] shadow-2xl border-none p-0 mx-auto bg-transparent backdrop:bg-black/50 backdrop:backdrop-blur-sm"
     >
-      {/* Backdrop click closes modal */}
-      <style>{`
-        dialog::backdrop {
-          background: rgba(0, 0, 0, 0.6);
-          backdrop-filter: blur(2px);
-        }
-        dialog[open] {
-          animation: dialog-in 0.2s ease-out;
-        }
-        @keyframes dialog-in {
-          from { opacity: 0; transform: scale(0.95) translateY(-8px); }
-          to   { opacity: 1; transform: scale(1)    translateY(0);    }
-        }
-      `}</style>
-
-      <div
-        style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '16px',
-          overflow: 'hidden',
-        }}
-      >
+      <div className="bg-white rounded-3xl overflow-hidden">
         {/* Header */}
-        <div
-          style={{
-            backgroundColor: primaryColor,
-            color: '#ffffff',
-            padding: '20px 24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '18px', fontWeight: '800' }}>
-              {isSuccess ? 'Bem-vindo!' : 'Cadastre-se'}
+        <div className="bg-primary text-white px-7 py-6 relative overflow-hidden">
+          {/* Decorative elements */}
+          <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full border border-white/10" />
+          <div className="absolute -bottom-4 -right-2 w-16 h-16 rounded-full border border-white/[0.06]" />
+
+          <div className="relative flex items-center justify-between">
+            <div>
+              <div className="text-xl font-extrabold tracking-tight">
+                {isSuccess ? 'Bem-vindo!' : 'Cadastre-se'}
+              </div>
+              <div className="text-[13px] text-white/50 mt-1 font-light">
+                {restaurantName}
+              </div>
             </div>
-            <div style={{ fontSize: '13px', opacity: 0.85, marginTop: '2px' }}>
-              {restaurantName}
-            </div>
+            <button
+              onClick={handleClose}
+              aria-label="Fechar"
+              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-lg flex items-center justify-center cursor-pointer transition-all duration-200"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
           </div>
-          <button
-            onClick={handleClose}
-            aria-label="Fechar"
-            style={{
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              color: '#ffffff',
-              fontSize: '20px',
-              fontWeight: '700',
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              lineHeight: 1,
-            }}
-          >
-            ×
-          </button>
         </div>
 
         {/* Body */}
-        <div style={{ padding: '28px 24px' }}>
+        <div className="p-7">
           {/* ---------- SUCCESS: Card Preview ---------- */}
           {isSuccess && (
             <div>
               {/* Visual card */}
               <div
-                style={{
-                  backgroundColor: primaryColor,
-                  borderRadius: '14px',
-                  padding: '24px',
-                  color: '#ffffff',
-                  marginBottom: '24px',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  boxShadow: `0 8px 24px ${primaryColor}66`,
-                }}
+                className={`rounded-2xl p-6 text-white mb-6 relative overflow-hidden ${
+                  cardImageUrl ? '' : 'bg-primary-gradient shadow-primary'
+                }`}
+                style={cardImageUrl ? {
+                  backgroundImage: `url(${cardImageUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                } : undefined}
               >
-                {/* Decorative circles */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '-20px',
-                    right: '-20px',
-                    width: '100px',
-                    height: '100px',
-                    borderRadius: '50%',
-                    background: 'rgba(255,255,255,0.1)',
-                  }}
-                />
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: '-30px',
-                    right: '40px',
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '50%',
-                    background: 'rgba(255,255,255,0.07)',
-                  }}
-                />
+                {cardImageUrl && (
+                  <>
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                  </>
+                )}
+                <div className="absolute -top-5 -right-5 w-24 h-24 rounded-full border border-white/10" />
+                <div className="absolute -bottom-8 right-8 w-20 h-20 rounded-full border border-white/[0.06]" />
 
-                <div style={{ position: 'relative' }}>
-                  {/* Rank badge */}
-                  <div
-                    style={{
-                      display: 'inline-block',
-                      background: 'rgba(255,255,255,0.2)',
-                      borderRadius: '20px',
-                      padding: '3px 12px',
-                      fontSize: '12px',
-                      fontWeight: '700',
-                      letterSpacing: '0.5px',
-                      marginBottom: '16px',
-                    }}
-                  >
-                    {state.rankName.toUpperCase()}
+                <div className="relative">
+                  <div className="inline-block bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-[11px] font-semibold tracking-widest uppercase mb-5">
+                    {state.rankName}
                   </div>
 
-                  {/* Customer name */}
-                  <div
-                    style={{
-                      fontSize: '20px',
-                      fontWeight: '800',
-                      marginBottom: '4px',
-                      letterSpacing: '-0.3px',
-                    }}
-                  >
+                  <div className="text-xl font-extrabold mb-1 tracking-tight">
                     {state.customerName}
                   </div>
 
-                  {/* Points */}
-                  <div
-                    style={{
-                      fontSize: '14px',
-                      opacity: 0.8,
-                      marginBottom: '20px',
-                    }}
-                  >
+                  <div className="text-sm text-white/50 mb-6 font-light">
                     0 pontos
                   </div>
 
-                  {/* Card number */}
-                  <div
-                    style={{
-                      fontSize: '22px',
-                      fontWeight: '700',
-                      letterSpacing: '2px',
-                      fontFamily: 'monospace',
-                    }}
-                  >
+                  <div className="text-[20px] font-bold tracking-[3px] font-mono text-white/80">
                     {state.cardNumber}
                   </div>
                 </div>
@@ -279,95 +162,33 @@ export function RegistrationModal({
 
               {/* iOS: Apple Wallet button */}
               {isIOS ? (
-                <a
-                  href={`/api/pass/${state.cardNumber}`}
-                  style={{
-                    display: 'block',
-                    textAlign: 'center',
-                    marginBottom: '16px',
-                  }}
-                >
-                  {/* Official Apple Wallet badge look-alike */}
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      backgroundColor: '#000000',
-                      color: '#ffffff',
-                      borderRadius: '8px',
-                      padding: '12px 24px',
-                      fontSize: '16px',
-                      fontWeight: '700',
-                      textDecoration: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <span style={{ fontSize: '20px' }}>🍎</span>
+                <a href={`/api/pass/${state.cardNumber}`} className="block text-center mb-4">
+                  <div className="inline-flex items-center gap-2.5 bg-black text-white rounded-xl px-6 py-3.5 text-[15px] font-bold cursor-pointer hover:bg-gray-900 transition-colors">
+                    <span className="text-lg">🍎</span>
                     Adicionar a Apple Wallet
                   </div>
                 </a>
               ) : (
-                <div
-                  style={{
-                    backgroundColor: '#f0f0f0',
-                    borderRadius: '10px',
-                    padding: '16px',
-                    textAlign: 'center',
-                    marginBottom: '16px',
-                    fontSize: '15px',
-                    color: '#333',
-                  }}
-                >
-                  <div style={{ fontWeight: '700', marginBottom: '4px' }}>Seu numero de cartao:</div>
-                  <div
-                    style={{
-                      fontSize: '22px',
-                      fontWeight: '800',
-                      letterSpacing: '2px',
-                      fontFamily: 'monospace',
-                      color: primaryColor,
-                    }}
-                  >
+                <div className="bg-surface-secondary rounded-2xl p-5 text-center mb-4">
+                  <div className="text-sm font-semibold mb-2 text-text-secondary">Seu numero de cartao</div>
+                  <div className="text-2xl font-extrabold tracking-[3px] font-mono text-primary">
                     {state.cardNumber}
                   </div>
-                  <div style={{ fontSize: '13px', color: '#666', marginTop: '6px' }}>
+                  <div className="text-[12px] text-text-muted mt-2 font-light">
                     Guarde seu numero: {state.cardNumber}
                   </div>
                 </div>
               )}
 
-              {/* Existing customer notice */}
               {state.isExisting && (
-                <div
-                  style={{
-                    backgroundColor: '#fff8e1',
-                    border: '1px solid #ffe082',
-                    borderRadius: '8px',
-                    padding: '12px 16px',
-                    fontSize: '14px',
-                    color: '#6d4c00',
-                    marginBottom: '16px',
-                    textAlign: 'center',
-                  }}
-                >
+                <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-3.5 text-sm text-amber-700 mb-4 text-center">
                   Voce ja tinha um cadastro — mostrando seu cartao existente.
                 </div>
               )}
 
               <button
                 onClick={handleClose}
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  backgroundColor: '#f0f0f0',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  color: '#333',
-                }}
+                className="w-full bg-surface-secondary text-text-secondary rounded-xl py-3.5 text-[15px] font-semibold cursor-pointer hover:bg-surface-tertiary transition-colors"
               >
                 Fechar
               </button>
@@ -377,35 +198,15 @@ export function RegistrationModal({
           {/* ---------- FORM ---------- */}
           {!isSuccess && (
             <form action={action}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* Error banner */}
+              <div className="flex flex-col gap-5">
                 {isError && (
-                  <div
-                    style={{
-                      backgroundColor: '#fde8e8',
-                      border: '1px solid #f5c6c6',
-                      borderRadius: '8px',
-                      padding: '12px 16px',
-                      fontSize: '14px',
-                      color: '#b00020',
-                    }}
-                  >
+                  <div className="bg-red-50 border border-red-200/60 rounded-xl p-3.5 text-sm text-red-600">
                     {state.message}
                   </div>
                 )}
 
-                {/* Name field */}
                 <div>
-                  <label
-                    htmlFor="reg-name"
-                    style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#444',
-                      marginBottom: '6px',
-                    }}
-                  >
+                  <label htmlFor="reg-name" className="block text-sm font-semibold text-text-primary mb-2">
                     Seu nome
                   </label>
                   <input
@@ -415,39 +216,19 @@ export function RegistrationModal({
                     placeholder="Ex: Maria Silva"
                     required
                     autoComplete="name"
-                    style={{
-                      width: '100%',
-                      padding: '12px 14px',
-                      border: `1.5px solid ${isError && state.fieldErrors?.name ? '#e53935' : '#ddd'}`,
-                      borderRadius: '8px',
-                      fontSize: '16px',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                      color: '#1a1a1a',
-                    }}
+                    className={inputClasses(isError && !!state.fieldErrors?.name)}
                   />
                   {isError && state.fieldErrors?.name && (
-                    <div style={{ color: '#e53935', fontSize: '13px', marginTop: '4px' }}>
+                    <div className="text-red-500 text-[13px] mt-1.5 ml-1">
                       {state.fieldErrors.name}
                     </div>
                   )}
                 </div>
 
-                {/* Phone field */}
                 <div>
-                  <label
-                    htmlFor="reg-phone-display"
-                    style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#444',
-                      marginBottom: '6px',
-                    }}
-                  >
+                  <label htmlFor="reg-phone-display" className="block text-sm font-semibold text-text-primary mb-2">
                     Celular
                   </label>
-                  {/* Visible formatted input */}
                   <input
                     id="reg-phone-display"
                     type="tel"
@@ -455,36 +236,25 @@ export function RegistrationModal({
                     value={phoneDisplay}
                     onChange={handlePhoneChange}
                     autoComplete="tel"
-                    style={{
-                      width: '100%',
-                      padding: '12px 14px',
-                      border: `1.5px solid ${isError && state.fieldErrors?.phone ? '#e53935' : '#ddd'}`,
-                      borderRadius: '8px',
-                      fontSize: '16px',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                      color: '#1a1a1a',
-                    }}
+                    className={inputClasses(isError && !!state.fieldErrors?.phone)}
                   />
-                  {/* Hidden input with raw digits — what Server Action reads */}
                   <input type="hidden" name="phone" value={phoneDigits} />
                   {isError && state.fieldErrors?.phone && (
-                    <div style={{ color: '#e53935', fontSize: '13px', marginTop: '4px' }}>
+                    <div className="text-red-500 text-[13px] mt-1.5 ml-1">
                       {state.fieldErrors.phone}
                     </div>
                   )}
                 </div>
 
-                <SubmitButton primaryColor={primaryColor} isPending={isPending} />
-
-                <p
-                  style={{
-                    fontSize: '12px',
-                    color: '#999',
-                    textAlign: 'center',
-                    margin: 0,
-                  }}
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="w-full bg-primary text-white font-bold py-4 rounded-xl text-base cursor-pointer hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 mt-1"
                 >
+                  {isPending ? 'Cadastrando...' : 'Cadastrar'}
+                </button>
+
+                <p className="text-[12px] text-text-muted text-center font-light">
                   Apenas nome e telefone — rapido e simples!
                 </p>
               </div>

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { jwtDecode } from 'jwt-decode'
 import { BrandingForm } from './BrandingForm'
 import { LogoForm } from './LogoForm'
+import { CardDesignForm } from './CardDesignForm'
 import { RanksForm } from './RanksForm'
 
 interface RevisitClaims {
@@ -17,6 +18,7 @@ interface Restaurant {
   primary_color: string
   secondary_color: string
   logo_url: string | null
+  card_image_url: string | null
   earn_rate: number
   reward_type: 'cashback' | 'free_product' | 'progressive_discount'
   point_expiry_days: number | null
@@ -68,6 +70,7 @@ export default async function SettingsPage() {
     primary_color: '#000000',
     secondary_color: '#FFFFFF',
     logo_url: null,
+    card_image_url: null,
     earn_rate: 2,
     reward_type: 'cashback',
     point_expiry_days: null,
@@ -98,6 +101,13 @@ export default async function SettingsPage() {
           Logo
         </h2>
         <LogoForm logoUrl={restaurantData.logo_url} programName={restaurantData.program_name} />
+      </section>
+
+      <section className="mb-10">
+        <h2 className="text-lg font-semibold text-db-text-secondary mb-4">
+          Design do Cartão
+        </h2>
+        <CardDesignForm cardImageUrl={restaurantData.card_image_url} />
       </section>
 
       <section className="mb-10">
