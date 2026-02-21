@@ -1,5 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { jwtDecode } from 'jwt-decode'
+
+interface RevisitClaims {
+  restaurant_id?: string
+  app_role?: 'owner' | 'manager'
+  sub: string
+  exp: number
+}
 
 // ---------------------------------------------------------------------------
 // Module-level slug cache (Edge Runtime compatible — no unstable_cache)
@@ -18,6 +26,7 @@ function isTenantRoute(pathname: string): boolean {
   const NON_TENANT_PREFIXES = [
     '/dashboard',
     '/login',
+    '/signup',
     '/api',
     '/_next',
     '/not-found',
@@ -84,9 +93,45 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   await supabase.auth.getUser()
 
   // ---------------------------------------------------------------------------
-  // 2. Tenant slug resolution for tenant routes
+  // 2. Dashboard route protection — redirect based on auth + role
   // ---------------------------------------------------------------------------
   const { pathname } = request.nextUrl
+
+  if (pathname.startsWith('/dashboard')) {
+    // getSession() is acceptable here: we're reading claims for routing only, not for data trust.
+    // RLS + layout auth checks handle the actual security enforcement.
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    const claims = jwtDecode<RevisitClaims>(session.access_token)
+    const role = claims.app_role
+
+    // Bare /dashboard — redirect to role-appropriate sub-route
+    if (pathname === '/dashboard' || pathname === '/dashboard/') {
+      if (role === 'owner') {
+        return NextResponse.redirect(new URL('/dashboard/owner', request.url))
+      } else if (role === 'manager') {
+        return NextResponse.redirect(new URL('/dashboard/manager', request.url))
+      } else {
+        return NextResponse.redirect(new URL('/login', request.url))
+      }
+    }
+
+    // Owner dashboard — block non-owners
+    if (pathname.startsWith('/dashboard/owner') && role !== 'owner') {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    // Manager dashboard — block non-managers
+    if (pathname.startsWith('/dashboard/manager') && role !== 'manager') {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+  }
 
   if (isTenantRoute(pathname)) {
     const slug = pathname.split('/')[1] // Extract first path segment
