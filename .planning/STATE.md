@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** A customer can register in under 60 seconds and immediately have a working loyalty card in their phone wallet that accumulates points every time they visit — zero friction.
-**Current focus:** Phase 3 — Loyalty Engine + Manager POS
+**Current focus:** Phase 4 — Customer Experience + Analytics
 
 ## Current Position
 
-Phase: 3 of 4 (Loyalty Engine + Manager POS)
-Plan: 4 of 4 in current phase — PHASE COMPLETE
-Status: Phase 3 complete
-Last activity: 2026-02-21 — Completed 03-04 (Manager POS page: card lookup, sale confirmation, reward flow; phase 3 all 4 plans done)
+Phase: 4 of 4 (Customer Experience + Analytics)
+Plan: 3 of 3 in current phase
+Status: Phase 4 in progress (plans 01 and 02 remain)
+Last activity: 2026-02-21 — Completed 04-03 (Owner analytics dashboard: stat cards, donut chart, customer list, logs with tabs)
 
-Progress: [███████░░░] 70%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -43,6 +43,7 @@ Progress: [███████░░░] 70%
 | Phase 03-loyalty-engine-manager-pos P02 | 5 | 1 task | 1 file |
 | Phase 03-loyalty-engine-manager-pos P03 | 2 | 2 tasks | 4 files |
 | Phase 03-loyalty-engine-manager-pos P04 | 15 | 3 tasks | 2 files |
+| Phase 04-customer-experience-analytics P03 | 5 | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,9 @@ Recent decisions affecting current work:
 - [Phase 03-04]: checkRewardForCurrentManager wrapper added to rewards.ts — resolves restaurantId from JWT so POS page never needs restaurantId as a client-visible hidden input
 - [Phase 03-04]: Three-phase POS UI driven entirely by useActionState step field — 'preview' shows confirmation, 'success' shows success screen, no local phase enum needed
 - [Phase 03-04]: resetTrigger local state resets to Phase 1 on Cancelar/Nova Venda without window.location.reload — preserves React hydration
+- [Phase 04-customer-experience-analytics]: recharts Tooltip formatter typed as (value: number | string | undefined) — recharts v2 types value as potentially undefined, requires union type
+- [Phase 04-customer-experience-analytics]: CustomerPanel implemented as Server Component — fetches own data via Supabase, panel state URL-driven via selected searchParam
+- [Phase 04-customer-experience-analytics]: Manager attribution shown as staff role (Proprietário/Gerente) — auth.users.email unreachable through PostgREST from restaurant_staff view at POC scale
 
 ### Pending Todos
 
@@ -105,5 +109,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 03-04-PLAN.md — Manager POS page (card lookup, sale confirmation, reward flow). Phase 3 fully complete.
+Stopped at: Completed 04-03-PLAN.md — Owner analytics dashboard (analytics overview with stat cards + donut chart, customer list with side panel, logs page with Vendas/Atividade tabs).
 Resume file: None

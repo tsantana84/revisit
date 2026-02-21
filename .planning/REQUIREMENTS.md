@@ -59,10 +59,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Owner Dashboard
 
-- [ ] **DASH-01**: Owner can view analytics overview: total customers, total points issued, total sales, total revenue tracked, rank distribution chart
-- [ ] **DASH-02**: Owner can view searchable customer list with rank, points, visits, total spend, and registration date
-- [ ] **DASH-03**: Owner can view full sales log: customer, card number, value, points credited, which manager registered, date and time
-- [ ] **DASH-04**: Owner can see audit log of all manager activity
+- [x] **DASH-01**: Owner can view analytics overview: total customers, total points issued, total sales, total revenue tracked, rank distribution chart
+- [x] **DASH-02**: Owner can view searchable customer list with rank, points, visits, total spend, and registration date
+- [x] **DASH-03**: Owner can view full sales log: customer, card number, value, points credited, which manager registered, date and time
+- [x] **DASH-04**: Owner can see audit log of all manager activity
 - [x] **DASH-05**: Owner can configure program settings: program name, colors, ranks, multipliers, reward type
 
 ### Push Notifications
@@ -163,10 +163,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MGR-05 | Phase 3 | Complete |
 | MGR-06 | Phase 3 | Complete |
 | MGR-07 | Phase 3 | Complete |
-| DASH-01 | Phase 5 | Pending |
-| DASH-02 | Phase 5 | Pending |
-| DASH-03 | Phase 5 | Pending |
-| DASH-04 | Phase 5 | Pending |
+| DASH-01 | Phase 5 | Complete |
+| DASH-02 | Phase 5 | Complete |
+| DASH-03 | Phase 5 | Complete |
+| DASH-04 | Phase 5 | Complete |
 | DASH-05 | Phase 2 | Complete |
 | PUSH-01 | Phase 4 | Pending |
 | PUSH-02 | Phase 4 | Pending |
