@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClerkSupabaseClient } from '@/lib/supabase/server'
 
 interface CustomerPanelProps {
   customerId: string
@@ -38,7 +38,7 @@ const RANK_COLORS: Record<string, string> = {
 }
 
 export default async function CustomerPanel({ customerId, closeUrl }: CustomerPanelProps) {
-  const supabase = await createClient()
+  const supabase = await createClerkSupabaseClient()
 
   const [
     { data: customer },

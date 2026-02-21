@@ -1,16 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
-import { jwtDecode } from 'jwt-decode'
+import { createClerkSupabaseClient } from '@/lib/supabase/server'
+import { requireOwner } from '@/lib/auth'
 import { BrandingForm } from './BrandingForm'
 import { LogoForm } from './LogoForm'
 import { CardDesignForm } from './CardDesignForm'
 import { RanksForm } from './RanksForm'
-
-interface RevisitClaims {
-  restaurant_id?: string
-  app_role?: 'owner' | 'manager'
-  sub: string
-  exp: number
-}
 
 interface Restaurant {
   id: string
@@ -34,22 +27,8 @@ interface Rank {
 }
 
 export default async function SettingsPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return <p className="text-db-text-muted">Sessão inválida. Faça login novamente.</p>
-  }
-
-  const claims = jwtDecode<RevisitClaims>(session.access_token)
-  const restaurantId = claims.restaurant_id
-
-  if (!restaurantId) {
-    return <p className="text-db-text-muted">Restaurante não encontrado.</p>
-  }
+  const { restaurantId } = await requireOwner()
+  const supabase = await createClerkSupabaseClient()
 
   const { data: restaurant } = await supabase
     .from('restaurants')

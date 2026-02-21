@@ -1,13 +1,5 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { jwtDecode } from 'jwt-decode'
-
-interface RevisitClaims {
-  restaurant_id?: string
-  app_role?: 'owner' | 'manager'
-  sub: string
-  exp: number
-}
+import { createClerkSupabaseClient } from '@/lib/supabase/server'
+import { requireOwner } from '@/lib/auth'
 
 type Props = {
   searchParams: Promise<{ tab?: string; page?: string; period?: string }>
@@ -78,21 +70,8 @@ export default async function LogsPage({ searchParams }: Props) {
   const from = (pageNum - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
 
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
-
-  const claims = jwtDecode<RevisitClaims>(session.access_token)
-  const restaurantId = claims.restaurant_id
-  if (!restaurantId) redirect('/login')
+  const { restaurantId } = await requireOwner()
+  const supabase = await createClerkSupabaseClient()
 
   const buildTabUrl = (t: string, p?: string) => {
     const params = new URLSearchParams({ tab: t, period: safePeriod })
