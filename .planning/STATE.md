@@ -34,6 +34,7 @@ Progress: [██░░░░░░░░] 20%
 - Trend: Fast execution
 
 *Updated after each plan completion*
+| Phase 01-foundation P02 | 9 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -50,9 +51,13 @@ Recent decisions affecting current work:
 - [01-01]: SECURITY DEFINER get_restaurant_id() with (SELECT ...) wrapper in all policies — prevents per-row JWT parsing; query plan cached per statement
 - [01-01]: Custom Access Token Hook (0002_rls.sql) must be registered in Supabase Dashboard after deploy — without it, JWT has no restaurant_id/app_role and all RLS returns empty
 - [01-01]: UNIQUE(user_id) on restaurant_staff enforces one-restaurant-per-user for POC; drop constraint to enable multi-restaurant managers in future
+- [01-02]: custom_access_token_hook must be SECURITY DEFINER — supabase_auth_admin has SELECT GRANT but no RLS policy on restaurant_staff; without SECURITY DEFINER the lookup silently returns null
+- [01-02]: Hook configured in config.toml [auth.hook.custom_access_token] for local dev auto-registration — no Dashboard step needed locally, only for cloud/production deploys
+- [01-02]: check_rls_enabled() RPC queries pg_class for all public tables without RLS — CI enforcement pattern so any new unprotected table breaks npm run test:rls
 - [Phase 01-03]: Manual Next.js setup (npm init + npm install) instead of create-next-app — directory was non-empty
 - [Phase 01-03]: auth.getUser() used for session refresh (not getSession()) — verifies JWT signature server-side
 - [Phase 01-03]: SUPABASE_SERVICE_ROLE_KEY never prefixed NEXT_PUBLIC_ — middleware runs server-side only, exposing it would bypass RLS
+- [Phase 01-02]: custom_access_token_hook must be SECURITY DEFINER — supabase_auth_admin has no RLS policy on restaurant_staff, so lookup silently returns null without it
 
 ### Pending Todos
 
@@ -67,5 +72,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 01-03-PLAN.md — Next.js middleware and Supabase client factories
+Stopped at: Completed 01-02-PLAN.md — JWT hook registration, SECURITY DEFINER fix, and RLS isolation test suite
 Resume file: None
