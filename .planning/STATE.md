@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** A customer can register in under 60 seconds and immediately have a working loyalty card in their phone wallet that accumulates points every time they visit — zero friction.
-**Current focus:** Phase 2 — Owner Setup
+**Current focus:** Phase 3 — Loyalty Engine + Manager POS
 
 ## Current Position
 
-Phase: 2 of 5 (Owner Setup)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-02-21 — Completed 02-03 (restaurant settings page: branding, program config, logo upload, ranks management)
+Phase: 3 of 5 (Loyalty Engine + Manager POS)
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-21 — Completed 03-01 (loyalty engine foundation: card number utility, register_sale/register_redemption RPCs, seed data update)
 
 Progress: [████░░░░░░] 45%
 
@@ -39,6 +39,7 @@ Progress: [████░░░░░░] 45%
 | Phase 02-owner-setup P01 | 5 | 2 tasks | 13 files |
 | Phase 02-owner-setup P02 | 8 | 2 tasks | 2 files |
 | Phase 02-owner-setup P03 | 3 | 2 tasks | 5 files |
+| Phase 03-loyalty-engine-manager-pos P01 | 3 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ Recent decisions affecting current work:
 - [02-03]: delete+insert strategy for ranks — simpler than upsert+reconcile at POC scale, no orphaned rows
 - [02-03]: ranks_json hidden field pattern — client serializes dynamic row state to JSON before submit; Server Action owns all validation
 - [02-03]: Zod v4 enum: requires 'as const' array + { error: string } not { errorMap: fn }; ZodError.issues not ZodError.errors
+- [Phase 03-01]: register_sale/register_redemption as SECURITY DEFINER PostgreSQL RPCs — only atomic write pattern available in PostgREST (no transaction API)
+- [Phase 03-01]: Seed card numbers updated from letter suffix (#0001-A) to Luhn numeric (#0001-9) — letter suffixes fail validateCardNumber() regex
 
 ### Pending Todos
 
@@ -87,5 +90,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 02-03-PLAN.md — restaurant settings page with branding, program config, logo upload, and ranks management
+Stopped at: Completed 03-01-PLAN.md — loyalty engine foundation (card number utility, register_sale/register_redemption RPCs, seed data update)
 Resume file: None

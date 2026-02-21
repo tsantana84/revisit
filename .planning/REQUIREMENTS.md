@@ -19,7 +19,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **CARD-01**: Customer can register with only name and phone number on a white-label landing page
 - [ ] **CARD-02**: Customer receives an Apple Wallet card immediately after registration via "Add to Wallet" button
-- [ ] **CARD-03**: Each customer gets a unique card number in #XXXX-D format with algorithmic check-digit validation
+- [x] **CARD-03**: Each customer gets a unique card number in #XXXX-D format with algorithmic check-digit validation
 - [ ] **CARD-04**: Wallet card displays: restaurant name/logo, customer name, card number, current points balance, current rank
 - [ ] **CARD-05**: Wallet card background color changes to reflect the customer's current rank
 
@@ -29,12 +29,12 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **PTS-02**: Owner can configure the points-per-R$ earn rate (default: 2 points per R$1)
 - [ ] **PTS-03**: Points are credited automatically after manager confirms a sale
 - [ ] **PTS-04**: Wallet card updates automatically after every transaction (points balance)
-- [ ] **PTS-05**: Owner can configure point expiry rules (expiry not enforced in POC, but configurable)
+- [x] **PTS-05**: Owner can configure point expiry rules (expiry not enforced in POC, but configurable)
 
 ### Rank System
 
 - [ ] **RANK-01**: Owner can configure rank names, visit thresholds, and point multipliers
-- [ ] **RANK-02**: Default ranks are: Bronze (0+ visits, 1x), Prata (5+ visits, 1.5x), Gold (15+ visits, 2x), VIP (30+ visits, 3x)
+- [x] **RANK-02**: Default ranks are: Bronze (0+ visits, 1x), Prata (5+ visits, 1.5x), Gold (15+ visits, 2x), VIP (30+ visits, 3x)
 - [ ] **RANK-03**: Customer rank is determined by total number of visits (not points)
 - [ ] **RANK-04**: When a customer crosses a rank threshold, they are promoted automatically
 - [ ] **RANK-05**: Wallet card color changes and customer receives a push notification on rank promotion
@@ -138,16 +138,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-05 | Phase 1 | Complete |
 | CARD-01 | Phase 5 | Pending |
 | CARD-02 | Phase 4 | Pending |
-| CARD-03 | Phase 3 | Pending |
+| CARD-03 | Phase 3 | Complete |
 | CARD-04 | Phase 4 | Pending |
 | CARD-05 | Phase 4 | Pending |
 | PTS-01 | Phase 3 | Pending |
 | PTS-02 | Phase 3 | Pending |
 | PTS-03 | Phase 3 | Pending |
 | PTS-04 | Phase 4 | Pending |
-| PTS-05 | Phase 3 | Pending |
+| PTS-05 | Phase 3 | Complete |
 | RANK-01 | Phase 3 | Pending |
-| RANK-02 | Phase 3 | Pending |
+| RANK-02 | Phase 3 | Complete |
 | RANK-03 | Phase 3 | Pending |
 | RANK-04 | Phase 3 | Pending |
 | RANK-05 | Phase 3 | Pending |
