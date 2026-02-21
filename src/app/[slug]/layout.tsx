@@ -21,7 +21,7 @@ export default async function TenantLayout({
   }
 
   return (
-    <div style={{ minHeight: '100vh', width: '100%' }}>
+    <div className="min-h-screen w-full">
       {children}
     </div>
   )
