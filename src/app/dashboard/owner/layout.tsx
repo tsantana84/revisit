@@ -1,15 +1,7 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { jwtDecode } from 'jwt-decode'
-import { logout } from '@/lib/actions/auth'
+import { requireOwner } from '@/lib/auth'
+import { SignOutButton } from '@clerk/nextjs'
 import DashboardNav from '../DashboardNav'
-
-interface RevisitClaims {
-  restaurant_id?: string
-  app_role?: 'owner' | 'manager'
-  sub: string
-  exp: number
-}
 
 const NAV_ITEMS = [
   { href: '/dashboard/owner', label: 'Painel' },
@@ -25,27 +17,9 @@ export default async function OwnerLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/login')
-  }
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    redirect('/login')
-  }
-
-  const claims = jwtDecode<RevisitClaims>(session.access_token)
-
-  if (claims.app_role !== 'owner') {
+  try {
+    await requireOwner()
+  } catch {
     redirect('/login')
   }
 
@@ -60,14 +34,14 @@ export default async function OwnerLayout({
         <DashboardNav items={NAV_ITEMS} />
 
         <div className="mt-auto">
-          <form action={logout}>
+          <SignOutButton redirectUrl="/login">
             <button
-              type="submit"
+              type="button"
               className="w-full rounded-lg border border-db-border px-3 py-2 text-left text-sm text-db-text-muted transition-colors hover:text-db-text-secondary hover:bg-white/[0.03] cursor-pointer"
             >
               Sair
             </button>
-          </form>
+          </SignOutButton>
         </div>
       </aside>
 
