@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Database schema, RLS policies, soft-delete views, and seed data
+- [x] 01-01-PLAN.md — Database schema, RLS policies, soft-delete views, and seed data
 - [ ] 01-02-PLAN.md — Custom Access Token Hook + SDK-based cross-tenant isolation test suite
 - [ ] 01-03-PLAN.md — Next.js tenant middleware with slug resolution, Supabase client factories
 
@@ -114,7 +114,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Not started | - |
+| 1. Foundation | 1/3 | In progress | - |
 | 2. Owner Setup | 0/4 | Not started | - |
 | 3. Loyalty Engine + Manager POS | 0/5 | Not started | - |
 | 4. Apple Wallet | 0/3 | Not started | - |
