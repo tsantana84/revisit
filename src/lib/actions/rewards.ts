@@ -312,3 +312,16 @@ export async function registerRedemption(
 
   return { step: 'error', message: 'Tipo de recompensa desconhecido' }
 }
+
+// ---------------------------------------------------------------------------
+// checkRewardForCurrentManager — convenience wrapper for client components
+// Resolves restaurantId from the current manager's JWT automatically.
+// ---------------------------------------------------------------------------
+
+export async function checkRewardForCurrentManager(cardNumber: string): Promise<RewardInfo> {
+  const auth = await getAuthenticatedManager()
+  if ('error' in auth) {
+    return { type: 'none' }
+  }
+  return checkRewardAvailability(cardNumber, auth.restaurantId)
+}
