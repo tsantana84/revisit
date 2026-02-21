@@ -77,6 +77,24 @@ export default async function OwnerLayout({
           >
             Configurações
           </a>
+          <a
+            href="/dashboard/owner/analytics"
+            style={{ color: '#d1d5db', textDecoration: 'none', padding: '0.5rem 0.75rem', borderRadius: '4px' }}
+          >
+            Análises
+          </a>
+          <a
+            href="/dashboard/owner/customers"
+            style={{ color: '#d1d5db', textDecoration: 'none', padding: '0.5rem 0.75rem', borderRadius: '4px' }}
+          >
+            Clientes
+          </a>
+          <a
+            href="/dashboard/owner/logs"
+            style={{ color: '#d1d5db', textDecoration: 'none', padding: '0.5rem 0.75rem', borderRadius: '4px' }}
+          >
+            Registros
+          </a>
         </nav>
 
         <div style={{ marginTop: 'auto' }}>
