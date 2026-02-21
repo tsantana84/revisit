@@ -59,7 +59,7 @@ export default clerkMiddleware(async (auth, request) => {
 
     // Bare /dashboard — redirect to role-appropriate sub-route
     if (pathname === '/dashboard' || pathname === '/dashboard/') {
-      let destination = '/login'
+      let destination = '/onboarding'
       if (role === 'owner') destination = '/dashboard/owner'
       else if (role === 'manager') destination = '/dashboard/manager'
       else if (role === 'admin') destination = '/dashboard/admin'
@@ -68,26 +68,25 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.redirect(new URL(destination, request.url))
     }
 
-    // Owner dashboard — block non-owners
-    if (pathname.startsWith('/dashboard/owner') && role !== 'owner') {
-      log.warn('middleware.auth_redirect', { user_id: userId, role, destination: '/login', reason: 'not_owner' })
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
-
-    // Manager dashboard — block non-managers (owners can also access)
-    if (pathname.startsWith('/dashboard/manager') && role !== 'manager' && role !== 'owner') {
-      log.warn('middleware.auth_redirect', { user_id: userId, role, destination: '/login', reason: 'not_manager' })
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
-
-    // Admin dashboard — block non-admins
-    if (pathname.startsWith('/dashboard/admin') && role !== 'admin') {
-      log.warn('middleware.auth_redirect', { user_id: userId, role, destination: '/login', reason: 'not_admin' })
-      return NextResponse.redirect(new URL('/login', request.url))
+    // Role-based blocks — only enforce when role IS present in session.
+    // If no role (stale session), let through — layout's DB fallback handles it.
+    if (role) {
+      if (pathname.startsWith('/dashboard/owner') && role !== 'owner') {
+        log.warn('middleware.auth_redirect', { user_id: userId, role, reason: 'not_owner' })
+        return NextResponse.redirect(new URL('/onboarding', request.url))
+      }
+      if (pathname.startsWith('/dashboard/manager') && role !== 'manager' && role !== 'owner') {
+        log.warn('middleware.auth_redirect', { user_id: userId, role, reason: 'not_manager' })
+        return NextResponse.redirect(new URL('/onboarding', request.url))
+      }
+      if (pathname.startsWith('/dashboard/admin') && role !== 'admin') {
+        log.warn('middleware.auth_redirect', { user_id: userId, role, reason: 'not_admin' })
+        return NextResponse.redirect(new URL('/onboarding', request.url))
+      }
     }
   }
 
-  // 3. Tenant slug resolution (public routes like /:slug/register)
+  // 4. Tenant slug resolution (public routes like /:slug/register)
   if (isTenantRoute(pathname)) {
     const slug = pathname.split('/')[1]
 

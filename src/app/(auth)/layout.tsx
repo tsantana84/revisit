@@ -4,26 +4,19 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f9fafb',
-      }}
-    >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '400px',
-          backgroundColor: '#ffffff',
-          borderRadius: '8px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          padding: '2rem',
-        }}
-      >
-        {children}
+    <div className="auth-gradient-bg flex items-center justify-center px-4">
+      <div className="relative z-10 w-full max-w-[440px]">
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-db-text)]">
+            Revisit
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-db-text-muted)]">
+            Programa de fidelidade inteligente
+          </p>
+        </div>
+        <div className="auth-card p-8">
+          {children}
+        </div>
       </div>
     </div>
   )

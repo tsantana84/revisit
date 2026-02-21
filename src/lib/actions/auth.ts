@@ -45,6 +45,27 @@ export async function completeOnboarding(
     return { message: 'Não autenticado' }
   }
 
+  // 0. Check if user already completed onboarding
+  const serviceClient = createServiceClient()
+  const { data: existingStaff } = await serviceClient
+    .from('restaurant_staff')
+    .select('id, restaurant_id, role')
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+    .maybeSingle()
+
+  if (existingStaff) {
+    // Ensure Clerk metadata is in sync (may have been missed on a prior attempt)
+    const clerk = await clerkClient()
+    await clerk.users.updateUser(userId, {
+      publicMetadata: { restaurant_id: existingStaff.restaurant_id, app_role: existingStaff.role },
+    })
+    const dest = existingStaff.role === 'admin' ? '/dashboard/admin'
+      : existingStaff.role === 'manager' ? '/dashboard/manager'
+      : '/dashboard/owner'
+    redirect(dest)
+  }
+
   // 1. Validate inputs
   const validated = OnboardingSchema.safeParse({
     restaurantName: formData.get('restaurantName'),
@@ -57,7 +78,6 @@ export async function completeOnboarding(
   const { restaurantName } = validated.data
 
   // 2. Create restaurant via service client (bypasses RLS)
-  const serviceClient = createServiceClient()
 
   let slug = slugify(restaurantName, { lower: true, strict: true })
 

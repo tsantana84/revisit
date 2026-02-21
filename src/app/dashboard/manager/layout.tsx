@@ -15,10 +15,10 @@ export default async function ManagerLayout({
   try {
     const ctx = await getRevisitAuth()
     if (ctx.role !== 'manager') {
-      redirect('/login')
+      redirect('/onboarding')
     }
   } catch {
-    redirect('/login')
+    redirect('/onboarding')
   }
 
   return (

@@ -20,7 +20,7 @@ export default async function OwnerLayout({
   try {
     await requireOwner()
   } catch {
-    redirect('/login')
+    redirect('/onboarding')
   }
 
   return (

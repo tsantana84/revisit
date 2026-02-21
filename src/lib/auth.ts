@@ -1,4 +1,6 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
+import { createServiceClient } from '@/lib/supabase/service'
+import { log } from '@/lib/logger'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -16,7 +18,7 @@ export interface RevisitAuth {
 type WithRestaurant = RevisitAuth & { restaurantId: string }
 
 // ---------------------------------------------------------------------------
-// Base helper — reads Clerk session claims
+// Base helper — reads Clerk session claims, falls back to DB if stale
 // ---------------------------------------------------------------------------
 
 export async function getRevisitAuth(): Promise<RevisitAuth> {
@@ -27,9 +29,37 @@ export async function getRevisitAuth(): Promise<RevisitAuth> {
   }
 
   const metadata = (sessionClaims?.publicMetadata ?? {}) as Record<string, unknown>
-  const role = metadata.app_role as AppRole | undefined
-  const restaurantId = (metadata.restaurant_id as string) ?? null
+  let role = metadata.app_role as AppRole | undefined
+  let restaurantId = (metadata.restaurant_id as string) ?? null
   const email = (sessionClaims?.email as string) ?? ''
+
+  // If session claims don't have role, check database as fallback.
+  // This handles the case where Clerk metadata was just updated but
+  // the session JWT hasn't refreshed yet (~60s cache).
+  if (!role) {
+    const serviceClient = createServiceClient()
+    const { data: staff } = await serviceClient
+      .from('restaurant_staff')
+      .select('restaurant_id, role')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .maybeSingle()
+
+    if (staff) {
+      role = staff.role as AppRole
+      restaurantId = staff.restaurant_id
+
+      // Sync Clerk metadata so future requests use the fast path
+      try {
+        const clerk = await clerkClient()
+        await clerk.users.updateUser(userId, {
+          publicMetadata: { restaurant_id: restaurantId, app_role: role },
+        })
+      } catch (err) {
+        log.error('auth.metadata_sync_failed', { user_id: userId, error: (err as Error).message })
+      }
+    }
+  }
 
   if (!role) {
     throw new Error('Conta não associada a nenhum restaurante')
