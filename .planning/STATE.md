@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 2 of 5 (Owner Setup)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-21 — Completed 02-01 (schema migration, auth flow, dashboard routes)
+Last activity: 2026-02-21 — Completed 02-02 (manager creation Route Handler and owner team management page)
 
-Progress: [███░░░░░░░] 27%
+Progress: [████░░░░░░] 36%
 
 ## Performance Metrics
 
@@ -28,7 +28,7 @@ Progress: [███░░░░░░░] 27%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation | 2 | 9 min | 4.5 min |
-| 02-owner-setup | 1 | 5 min | 5 min |
+| 02-owner-setup | 2 | 13 min | 6.5 min |
 
 **Recent Trend:**
 - Last 5 plans: 7 min, 2 min, 5 min
@@ -37,6 +37,7 @@ Progress: [███░░░░░░░] 27%
 *Updated after each plan completion*
 | Phase 01-foundation P02 | 9 | 2 tasks | 6 files |
 | Phase 02-owner-setup P01 | 5 | 2 tasks | 13 files |
+| Phase 02-owner-setup P02 | 8 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,9 @@ Recent decisions affecting current work:
 - [02-01]: signOut() + redirect('/login?signup=success') after signup instead of refreshSession() — avoids session cookie timing uncertainty in Server Action
 - [02-01]: string_to_array(name, '/') instead of storage.foldername() in RLS — safer for local Supabase CLI versions
 - [02-01]: /signup added to NON_TENANT_PREFIXES in middleware — prevents signup URL being treated as tenant slug
+- [02-02]: verifyOwner() helper in route.ts reuses JWT claim check across POST and GET without duplication
+- [02-02]: email_confirm: true on auth.admin.createUser — owner sets password directly, no email verification needed for staff account
+- [02-02]: POST response includes email so team page can annotate newly created manager rows (restaurant_staff has no email column)
 
 ### Pending Todos
 
@@ -78,5 +82,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 02-01-PLAN.md — schema migration, auth flow (signup/login/logout), and dashboard route structure
+Stopped at: Completed 02-02-PLAN.md — manager creation Route Handler and owner team management page
 Resume file: None

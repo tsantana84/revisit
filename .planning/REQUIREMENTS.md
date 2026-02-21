@@ -11,8 +11,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **AUTH-01**: Owner can sign up with email and password
 - [x] **AUTH-02**: Owner can log in and access their restaurant dashboard
-- [ ] **AUTH-03**: Owner can create manager accounts with email and password
-- [ ] **AUTH-04**: Manager can log in and access the dedicated manager panel
+- [x] **AUTH-03**: Owner can create manager accounts with email and password
+- [x] **AUTH-04**: Manager can log in and access the dedicated manager panel
 - [x] **AUTH-05**: Each restaurant's data is fully isolated — customers, points, sales, and configurations never visible to other restaurants (Supabase RLS)
 
 ### Customer Registration & Wallet
@@ -133,8 +133,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | AUTH-01 | Phase 2 | Complete |
 | AUTH-02 | Phase 2 | Complete |
-| AUTH-03 | Phase 2 | Pending |
-| AUTH-04 | Phase 2 | Pending |
+| AUTH-03 | Phase 2 | Complete |
+| AUTH-04 | Phase 2 | Complete |
 | AUTH-05 | Phase 1 | Complete |
 | CARD-01 | Phase 5 | Pending |
 | CARD-02 | Phase 4 | Pending |
