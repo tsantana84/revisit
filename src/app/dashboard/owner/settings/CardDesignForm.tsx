@@ -5,6 +5,8 @@ import { saveCardImage, removeCardImage, type CardDesignState } from '@/lib/acti
 
 interface CardDesignFormProps {
   cardImageUrl: string | null
+  primaryColor: string
+  secondaryColor: string
 }
 
 function CardPreview({ imageUrl, restaurantName }: { imageUrl: string; restaurantName?: string }) {
@@ -49,7 +51,7 @@ function CardPreview({ imageUrl, restaurantName }: { imageUrl: string; restauran
   )
 }
 
-export function CardDesignForm({ cardImageUrl }: CardDesignFormProps) {
+export function CardDesignForm({ cardImageUrl, primaryColor, secondaryColor }: CardDesignFormProps) {
   const [prompt, setPrompt] = useState('')
   const [generating, setGenerating] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -73,7 +75,7 @@ export function CardDesignForm({ cardImageUrl }: CardDesignFormProps) {
       const res = await fetch('/api/generate-card', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt.trim() }),
+        body: JSON.stringify({ prompt: prompt.trim(), primaryColor, secondaryColor }),
       })
 
       const data = await res.json()
@@ -198,17 +200,45 @@ export function CardDesignForm({ cardImageUrl }: CardDesignFormProps) {
     )
   }
 
+  const templates = [
+    { label: 'Japonês', prompt: 'Estética elegante de restaurante japonês com padrões de carpas koi, texturas de bambu e gradientes de tinta nanquim' },
+    { label: 'Italiano', prompt: 'Visual acolhedor de trattoria italiana com tons de terracota, padrões de ramos de oliveira e texturas rústicas mediterrâneas' },
+    { label: 'Churrascaria', prompt: 'Estética premium de churrascaria com texturas de couro escuro, brilho de brasas e gradientes de carvão defumado' },
+    { label: 'Padaria', prompt: 'Padaria artesanal aconchegante com tons dourados, texturas de farinha e padrões de grãos de trigo' },
+    { label: 'Cafeteria', prompt: 'Cafeteria moderna com gradientes de espresso, desenhos de latte art e tons quentes de marrom' },
+    { label: 'Pizzaria', prompt: 'Pizzaria vibrante com brilho de forno a lenha, detalhes em vermelho tomate e texturas de tijolo rústico' },
+    { label: 'Hamburgueria', prompt: 'Estética ousada de hamburgueria com grelhas esfumaçadas, brilhos neon e texturas industriais escuras' },
+    { label: 'Frutos do Mar', prompt: 'Restaurante de frutos do mar com gradientes azul profundo, padrões de ondas e detalhes de pérola e coral' },
+  ]
+
   // Prompt input
   return (
     <div className="db-card p-6 space-y-4">
       <p className="text-sm text-db-text-muted">
-        Descreva o visual desejado para o cartão de fidelidade. A IA vai gerar uma imagem de fundo personalizada.
+        Escolha um modelo ou descreva o visual desejado para o cartão de fidelidade.
       </p>
+
+      <div className="flex flex-wrap gap-2">
+        {templates.map((t) => (
+          <button
+            key={t.label}
+            type="button"
+            onClick={() => setPrompt(t.prompt)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+              prompt === t.prompt
+                ? 'bg-db-accent text-white border-db-accent'
+                : 'bg-db-surface-secondary text-db-text-secondary border-db-border hover:border-db-accent/50'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       <textarea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
-        placeholder="Ex: Cartão elegante de restaurante japonês com tons de preto e dourado, estilo premium..."
+        placeholder="Ou descreva seu próprio estilo..."
         rows={3}
         maxLength={500}
         className="db-input w-full resize-none"

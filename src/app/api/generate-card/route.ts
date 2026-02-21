@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
   }
 
-  let body: { prompt?: string }
+  let body: { prompt?: string; primaryColor?: string; secondaryColor?: string }
   try {
     body = await request.json()
   } catch {
@@ -44,6 +44,8 @@ export async function POST(request: Request) {
   }
 
   const prompt = body.prompt?.trim()
+  const primaryColor = body.primaryColor || '#000000'
+  const secondaryColor = body.secondaryColor || '#FFFFFF'
 
   if (!prompt || prompt.length < 5 || prompt.length > 500) {
     return NextResponse.json(
@@ -54,6 +56,7 @@ export async function POST(request: Request) {
 
   const fullPrompt = [
     prompt,
+    `Use these brand colors as the dominant palette: primary ${primaryColor} and secondary ${secondaryColor}.`,
     'This image must contain NO TEXT, NO LETTERS, NO NUMBERS, NO WORDS of any kind.',
     'Wide landscape background image. Left side slightly darker. Premium aesthetic, high quality.',
   ].join('. ')

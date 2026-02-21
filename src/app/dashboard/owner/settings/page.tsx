@@ -107,7 +107,7 @@ export default async function SettingsPage() {
         <h2 className="text-lg font-semibold text-db-text-secondary mb-4">
           Design do Cartão
         </h2>
-        <CardDesignForm cardImageUrl={restaurantData.card_image_url} />
+        <CardDesignForm cardImageUrl={restaurantData.card_image_url} primaryColor={restaurantData.primary_color} secondaryColor={restaurantData.secondary_color} />
       </section>
 
       <section className="mb-10">
