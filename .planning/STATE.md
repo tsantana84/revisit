@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** A customer can register in under 60 seconds and immediately have a working loyalty card in their phone wallet that accumulates points every time they visit — zero friction.
-**Current focus:** Phase 1 — Foundation
+**Current focus:** Phase 2 — Owner Setup
 
 ## Current Position
 
-Phase: 1 of 5 (Foundation)
-Plan: 3 of 3 in current phase
+Phase: 2 of 5 (Owner Setup)
+Plan: 1 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-21 — Completed 01-03 (Next.js middleware, Supabase client factories, slug resolver)
+Last activity: 2026-02-21 — Completed 02-01 (schema migration, auth flow, dashboard routes)
 
-Progress: [██░░░░░░░░] 20%
+Progress: [███░░░░░░░] 27%
 
 ## Performance Metrics
 
@@ -28,13 +28,15 @@ Progress: [██░░░░░░░░] 20%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation | 2 | 9 min | 4.5 min |
+| 02-owner-setup | 1 | 5 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 7 min, 2 min
+- Last 5 plans: 7 min, 2 min, 5 min
 - Trend: Fast execution
 
 *Updated after each plan completion*
 | Phase 01-foundation P02 | 9 | 2 tasks | 6 files |
+| Phase 02-owner-setup P01 | 5 | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -58,6 +60,10 @@ Recent decisions affecting current work:
 - [Phase 01-03]: auth.getUser() used for session refresh (not getSession()) — verifies JWT signature server-side
 - [Phase 01-03]: SUPABASE_SERVICE_ROLE_KEY never prefixed NEXT_PUBLIC_ — middleware runs server-side only, exposing it would bypass RLS
 - [Phase 01-02]: custom_access_token_hook must be SECURITY DEFINER — supabase_auth_admin has no RLS policy on restaurant_staff, so lookup silently returns null without it
+- [02-01]: jwt-decode on session access_token (not user.app_metadata) to read app_role — app_metadata mirror unreliable for custom hook-injected claims
+- [02-01]: signOut() + redirect('/login?signup=success') after signup instead of refreshSession() — avoids session cookie timing uncertainty in Server Action
+- [02-01]: string_to_array(name, '/') instead of storage.foldername() in RLS — safer for local Supabase CLI versions
+- [02-01]: /signup added to NON_TENANT_PREFIXES in middleware — prevents signup URL being treated as tenant slug
 
 ### Pending Todos
 
@@ -72,5 +78,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 01-02-PLAN.md — JWT hook registration, SECURITY DEFINER fix, and RLS isolation test suite
+Stopped at: Completed 02-01-PLAN.md — schema migration, auth flow (signup/login/logout), and dashboard route structure
 Resume file: None

@@ -9,8 +9,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Authentication & Multi-tenancy
 
-- [ ] **AUTH-01**: Owner can sign up with email and password
-- [ ] **AUTH-02**: Owner can log in and access their restaurant dashboard
+- [x] **AUTH-01**: Owner can sign up with email and password
+- [x] **AUTH-02**: Owner can log in and access their restaurant dashboard
 - [ ] **AUTH-03**: Owner can create manager accounts with email and password
 - [ ] **AUTH-04**: Manager can log in and access the dedicated manager panel
 - [x] **AUTH-05**: Each restaurant's data is fully isolated — customers, points, sales, and configurations never visible to other restaurants (Supabase RLS)
@@ -77,7 +77,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **WL-01**: Customer-facing pages (landing page, registration) are branded as the restaurant
 - [ ] **WL-02**: The customer never sees the name "REVISIT" on any customer-facing surface
-- [ ] **WL-03**: Each restaurant has its own URL slug (app.revisit.com/{restaurant-slug})
+- [x] **WL-03**: Each restaurant has its own URL slug (app.revisit.com/{restaurant-slug})
 - [ ] **WL-04**: Colors, logo, and program name are fully configurable per restaurant
 - [ ] **WL-05**: Digital wallet card shows only the restaurant's branding
 
@@ -131,8 +131,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 2 | Pending |
-| AUTH-02 | Phase 2 | Pending |
+| AUTH-01 | Phase 2 | Complete |
+| AUTH-02 | Phase 2 | Complete |
 | AUTH-03 | Phase 2 | Pending |
 | AUTH-04 | Phase 2 | Pending |
 | AUTH-05 | Phase 1 | Complete |
@@ -175,7 +175,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PUSH-05 | Phase 4 | Pending |
 | WL-01 | Phase 2 | Pending |
 | WL-02 | Phase 2 | Pending |
-| WL-03 | Phase 2 | Pending |
+| WL-03 | Phase 2 | Complete |
 | WL-04 | Phase 2 | Pending |
 | WL-05 | Phase 2 | Pending |
 
