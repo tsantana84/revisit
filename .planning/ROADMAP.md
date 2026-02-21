@@ -63,14 +63,13 @@ Plans:
   3. Points are credited to the customer's ledger after manager confirmation, visit count increments, and if a rank threshold is crossed the customer's rank updates automatically
   4. A reward becomes available when a customer meets the configured threshold (points or rank), and the manager can confirm reward redemption at the panel
   5. The manager panel shows only the card lookup and sale registration UI — no analytics, customer list, configuration, or navigation to other sections is accessible
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 03-01: Card number service — #XXXX-D format, Luhn check-digit generation and validation, uniqueness constraint
-- [ ] 03-02: Points engine — earn rate × rank multiplier calculation, integer math, NUMERIC ledger, golden-path unit tests
-- [ ] 03-03: Rank system — visit-count-based promotion, configurable thresholds, automatic rank assignment on transaction
-- [ ] 03-04: Reward system — cashback, free product, progressive discount models; redemption confirmation flow
-- [ ] 03-05: Manager POS panel — card lookup UI, check-digit validation, sale entry, two-step confirmation, role-enforced access
+- [ ] 03-01-PLAN.md — Card number utility (Luhn check-digit), loyalty engine migration (register_sale + register_redemption RPCs, discount_pct column), seed data update
+- [ ] 03-02-PLAN.md — POS Server Actions (lookupCustomer preview, registerSale via RPC, getAuthenticatedManager helper)
+- [ ] 03-03-PLAN.md — Reward system Server Actions (checkRewardAvailability, registerRedemption) + discount_pct field in RanksForm
+- [ ] 03-04-PLAN.md — Manager POS page UI (card lookup, two-step sale confirmation, reward display, role-enforced single-function layout)
 
 ### Phase 4: Apple Wallet
 **Goal**: A customer immediately receives a signed Apple Wallet pass after registration, and the pass updates automatically when points or rank change
@@ -115,6 +114,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/3 | In progress | - |
 | 2. Owner Setup | 3/3 | Complete | 2026-02-21 |
-| 3. Loyalty Engine + Manager POS | 0/5 | Not started | - |
+| 3. Loyalty Engine + Manager POS | 0/4 | Not started | - |
 | 4. Apple Wallet | 0/3 | Not started | - |
 | 5. Customer Experience + Analytics | 0/3 | Not started | - |
