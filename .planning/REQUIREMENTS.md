@@ -131,13 +131,59 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| *(populated by roadmapper)* | | |
+| AUTH-01 | Phase 2 | Pending |
+| AUTH-02 | Phase 2 | Pending |
+| AUTH-03 | Phase 2 | Pending |
+| AUTH-04 | Phase 2 | Pending |
+| AUTH-05 | Phase 1 | Pending |
+| CARD-01 | Phase 5 | Pending |
+| CARD-02 | Phase 4 | Pending |
+| CARD-03 | Phase 3 | Pending |
+| CARD-04 | Phase 4 | Pending |
+| CARD-05 | Phase 4 | Pending |
+| PTS-01 | Phase 3 | Pending |
+| PTS-02 | Phase 3 | Pending |
+| PTS-03 | Phase 3 | Pending |
+| PTS-04 | Phase 4 | Pending |
+| PTS-05 | Phase 3 | Pending |
+| RANK-01 | Phase 3 | Pending |
+| RANK-02 | Phase 3 | Pending |
+| RANK-03 | Phase 3 | Pending |
+| RANK-04 | Phase 3 | Pending |
+| RANK-05 | Phase 3 | Pending |
+| RWRD-01 | Phase 3 | Pending |
+| RWRD-02 | Phase 3 | Pending |
+| RWRD-03 | Phase 3 | Pending |
+| RWRD-04 | Phase 3 | Pending |
+| RWRD-05 | Phase 3 | Pending |
+| MGR-01 | Phase 3 | Pending |
+| MGR-02 | Phase 3 | Pending |
+| MGR-03 | Phase 3 | Pending |
+| MGR-04 | Phase 3 | Pending |
+| MGR-05 | Phase 3 | Pending |
+| MGR-06 | Phase 3 | Pending |
+| MGR-07 | Phase 3 | Pending |
+| DASH-01 | Phase 5 | Pending |
+| DASH-02 | Phase 5 | Pending |
+| DASH-03 | Phase 5 | Pending |
+| DASH-04 | Phase 5 | Pending |
+| DASH-05 | Phase 2 | Pending |
+| PUSH-01 | Phase 4 | Pending |
+| PUSH-02 | Phase 4 | Pending |
+| PUSH-03 | Phase 4 | Pending |
+| PUSH-04 | Phase 4 | Pending |
+| PUSH-05 | Phase 4 | Pending |
+| WL-01 | Phase 2 | Pending |
+| WL-02 | Phase 2 | Pending |
+| WL-03 | Phase 2 | Pending |
+| WL-04 | Phase 2 | Pending |
+| WL-05 | Phase 2 | Pending |
 
 **Coverage:**
-- v1 requirements: 40 total
-- Mapped to phases: 0
-- Unmapped: 40 ⚠️
+- v1 requirements: 47 total
+- Mapped to phases: 47
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-02-20 after initial definition*
+*Last updated: 2026-02-20 after roadmap creation — all 47 v1 requirements mapped*
