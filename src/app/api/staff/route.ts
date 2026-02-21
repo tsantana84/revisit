@@ -161,5 +161,13 @@ export async function GET() {
     return NextResponse.json({ error: 'Erro ao buscar gerentes' }, { status: 500 })
   }
 
-  return NextResponse.json({ staff: staff ?? [] })
+  // Enrich with emails from auth.users
+  const enriched = await Promise.all(
+    (staff ?? []).map(async (s) => {
+      const { data } = await serviceClient.auth.admin.getUserById(s.user_id)
+      return { ...s, email: data?.user?.email ?? null }
+    })
+  )
+
+  return NextResponse.json({ staff: enriched })
 }
