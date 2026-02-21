@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --color-surface-secondary: #f8fafc;
+  --color-surface-tertiary: #f1f5f9;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748b;
+  --color-border: #e2e8f0;
+
+  /* Dashboard dark theme tokens */
+  --color-db-bg: #09090b;
+  --color-db-surface: #111113;
+  --color-db-card: rgba(255, 255, 255, 0.03);
+  --color-db-card-border: rgba(255, 255, 255, 0.06);
+  --color-db-text: #f4f4f5;
+  --color-db-text-secondary: #a1a1aa;
+  --color-db-text-muted: #71717a;
+  --color-db-border: rgba(255, 255, 255, 0.08);
+  --color-db-accent: #6366f1;
+  --color-db-accent-hover: #818cf8;
+  --color-db-success: #34d399;
+  --color-db-error: #f87171;
+  --color-db-warning: #fbbf24;
+  --color-db-info: #60a5fa;
+}
+
+:root {
+  --primary: #000000;
+  --primary-rgb: 0, 0, 0;
+}
+
+/* Dashboard dark mode scope */
+.dark {
+  background-color: var(--color-db-bg);
+  color: var(--color-db-text);
+}
+
+.dark .recharts-legend-item-text {
+  color: var(--color-db-text-secondary) !important;
+}
+
+.dark .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: var(--color-db-surface) !important;
+  border-color: var(--color-db-border) !important;
+  border-radius: 8px !important;
+}
+
+.dark .recharts-tooltip-item {
+  color: var(--color-db-text) !important;
+}
+
+@layer base {
+  dialog::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  dialog[open] {
+    animation: dialog-in 0.25s ease-out;
+  }
+
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+}
+
+@utility bg-primary {
+  background-color: var(--primary);
+}
+
+@utility text-primary {
+  color: var(--primary);
+}
+
+@utility bg-primary-gradient {
+  background: linear-gradient(
+    160deg,
+    rgba(var(--primary-rgb), 1) 0%,
+    rgba(var(--primary-rgb), 0.92) 40%,
+    rgba(var(--primary-rgb), 0.82) 100%
+  );
+}
+
+@utility bg-primary-subtle {
+  background-color: rgba(var(--primary-rgb), 0.06);
+}
+
+@utility shadow-primary {
+  box-shadow: 0 8px 24px rgba(var(--primary-rgb), 0.4);
+}
+
+@utility border-primary-subtle {
+  border-color: rgba(var(--primary-rgb), 0.1);
+}
+
+@utility db-card {
+  background-color: var(--color-db-card);
+  border: 1px solid var(--color-db-card-border);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+}
+
+@utility db-input {
+  background-color: var(--color-db-surface);
+  border: 1px solid var(--color-db-border);
+  border-radius: 8px;
+  color: var(--color-db-text);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s;
+
+  &:focus {
+    border-color: var(--color-db-accent);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+  }
+}

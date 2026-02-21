@@ -25,7 +25,7 @@ export default function PeriodSelector({ current }: PeriodSelectorProps) {
   }
 
   return (
-    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+    <div className="flex gap-2 mb-6">
       {PERIODS.map((p) => {
         const isActive = current === p.value
         return (
@@ -33,17 +33,11 @@ export default function PeriodSelector({ current }: PeriodSelectorProps) {
             key={p.value}
             onClick={() => handleClick(p.value)}
             disabled={isPending}
-            style={{
-              padding: '0.5rem 1rem',
-              borderRadius: '6px',
-              border: '1px solid #3b82f6',
-              backgroundColor: isActive ? '#3b82f6' : 'transparent',
-              color: isActive ? '#ffffff' : '#3b82f6',
-              cursor: isPending ? 'not-allowed' : 'pointer',
-              fontWeight: isActive ? '600' : '400',
-              opacity: isPending ? 0.7 : 1,
-              fontSize: '0.875rem',
-            }}
+            className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer ${
+              isActive
+                ? 'bg-db-accent text-white shadow-[0_0_12px_rgba(99,102,241,0.3)]'
+                : 'text-db-text-muted hover:text-db-text-secondary bg-white/[0.03] hover:bg-white/[0.06]'
+            } ${isPending ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
             {p.label}
           </button>

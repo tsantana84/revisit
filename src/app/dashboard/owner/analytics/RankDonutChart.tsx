@@ -32,19 +32,11 @@ export default function RankDonutChart({ data }: RankDonutChartProps) {
 
   if (data.length === 0 || total === 0) {
     return (
-      <div
-        style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '8px',
-          padding: '1.5rem',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          marginTop: '1.5rem',
-        }}
-      >
-        <h2 style={{ margin: '0 0 1rem', fontSize: '1rem', color: '#374151' }}>
+      <div className="db-card p-6 mt-6">
+        <h2 className="text-base font-semibold text-db-text mb-4">
           Distribuição por Nível
         </h2>
-        <p style={{ color: '#9ca3af', textAlign: 'center', padding: '2rem' }}>
+        <p className="text-db-text-muted text-center py-8">
           Nenhum cliente cadastrado
         </p>
       </div>
@@ -52,20 +44,11 @@ export default function RankDonutChart({ data }: RankDonutChartProps) {
   }
 
   return (
-    <div
-      style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '8px',
-        padding: '1.5rem',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        marginTop: '1.5rem',
-        position: 'relative',
-      }}
-    >
-      <h2 style={{ margin: '0 0 1rem', fontSize: '1rem', color: '#374151' }}>
+    <div className="db-card p-6 mt-6 relative">
+      <h2 className="text-base font-semibold text-db-text mb-4">
         Distribuição por Nível
       </h2>
-      <div style={{ position: 'relative' }}>
+      <div className="relative">
         <ResponsiveContainer width="100%" height={280}>
           <PieChart>
             <Pie
@@ -86,25 +69,21 @@ export default function RankDonutChart({ data }: RankDonutChartProps) {
             </Pie>
             <Tooltip
               formatter={(value: number | string | undefined) => [`${value ?? 0} clientes`, '']}
+              contentStyle={{
+                backgroundColor: '#111113',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '8px',
+                color: '#f4f4f5',
+              }}
+              itemStyle={{ color: '#f4f4f5' }}
             />
             <Legend />
           </PieChart>
         </ResponsiveContainer>
         {/* Total count in center */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -70%)',
-            textAlign: 'center',
-            pointerEvents: 'none',
-          }}
-        >
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827' }}>
-            {total}
-          </div>
-          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>clientes</div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[70%] text-center pointer-events-none">
+          <div className="text-2xl font-bold text-db-text">{total}</div>
+          <div className="text-xs text-db-text-muted">clientes</div>
         </div>
       </div>
     </div>

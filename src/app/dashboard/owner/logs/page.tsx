@@ -52,6 +52,13 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   expiry: 'Expiração',
 }
 
+const TRANSACTION_TYPE_BADGE: Record<string, string> = {
+  earn: 'bg-emerald-500/15 text-emerald-400',
+  redeem: 'bg-blue-500/15 text-blue-400',
+  adjustment: 'bg-amber-500/15 text-amber-400',
+  expiry: 'bg-red-500/15 text-red-400',
+}
+
 const ROLE_LABELS: Record<string, string> = {
   owner: 'Proprietário',
   manager: 'Gerente',
@@ -142,7 +149,6 @@ export default async function LogsPage({ searchParams }: Props) {
     totalCount = count ?? 0
     totalPages = Math.ceil(totalCount / PAGE_SIZE)
 
-    // Batch fetch customers and staff
     const customerIds = [...new Set(salesRows.map((s) => s.customer_id).filter(Boolean) as string[])]
     const staffIds = [...new Set(salesRows.map((s) => s.staff_id).filter(Boolean) as string[])]
 
@@ -184,7 +190,7 @@ export default async function LogsPage({ searchParams }: Props) {
   }[] = []
 
   let auditCustomerMap = new Map<string, { name: string }>()
-  let auditSalesStaffMap = new Map<string, string>() // sale_id → staff role
+  let auditSalesStaffMap = new Map<string, string>()
 
   if (safeTab === 'atividade') {
     let auditQuery = supabase
@@ -206,7 +212,6 @@ export default async function LogsPage({ searchParams }: Props) {
     totalCount = count ?? 0
     totalPages = Math.ceil(totalCount / PAGE_SIZE)
 
-    // Batch fetch customer names
     const auditCustomerIds = [
       ...new Set(auditRows.map((r) => r.customer_id).filter(Boolean) as string[]),
     ]
@@ -238,7 +243,6 @@ export default async function LogsPage({ searchParams }: Props) {
       auditCustomerMap.set(c.id, { name: c.name })
     }
 
-    // Fetch staff roles for those sales
     const saleStaffIds = [
       ...new Set(
         (salesForAuditRes.data ?? [])
@@ -260,7 +264,6 @@ export default async function LogsPage({ searchParams }: Props) {
       staffIdToRole.set(s.id, s.role)
     }
 
-    // Map sale_id → staff role for the audit rows
     for (const sale of salesForAuditRes.data ?? []) {
       if (sale.staff_id) {
         const role = staffIdToRole.get(sale.staff_id)
@@ -271,28 +274,23 @@ export default async function LogsPage({ searchParams }: Props) {
 
   return (
     <div>
-      <h1 style={{ margin: '0 0 1.5rem', fontSize: '1.5rem', fontWeight: 'bold', color: '#111827' }}>
+      <h1 className="text-2xl font-bold text-db-text mb-6">
         Registros
       </h1>
 
       {/* Period selector */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
+      <div className="flex gap-2 mb-5">
         {PERIODS.map((p) => {
           const isActive = safePeriod === p.value
           return (
             <a
               key={p.value}
               href={buildPeriodUrl(p.value)}
-              style={{
-                padding: '0.4rem 0.875rem',
-                borderRadius: '6px',
-                border: '1px solid #3b82f6',
-                backgroundColor: isActive ? '#3b82f6' : 'transparent',
-                color: isActive ? '#ffffff' : '#3b82f6',
-                textDecoration: 'none',
-                fontWeight: isActive ? '600' : '400',
-                fontSize: '0.875rem',
-              }}
+              className={`px-3.5 py-1.5 rounded-full text-sm font-medium no-underline transition-all ${
+                isActive
+                  ? 'bg-db-accent text-white shadow-[0_0_12px_rgba(99,102,241,0.3)]'
+                  : 'text-db-text-muted hover:text-db-text-secondary bg-white/[0.03] hover:bg-white/[0.06]'
+              }`}
             >
               {p.label}
             </a>
@@ -300,8 +298,8 @@ export default async function LogsPage({ searchParams }: Props) {
         })}
       </div>
 
-      {/* Tab buttons */}
-      <div style={{ display: 'flex', gap: '0', marginBottom: '1.5rem', borderBottom: '2px solid #e5e7eb' }}>
+      {/* Tab buttons — Linear style underline tabs */}
+      <div className="flex gap-0 mb-6 border-b border-db-border">
         {[
           { value: 'vendas', label: 'Vendas' },
           { value: 'atividade', label: 'Atividade' },
@@ -311,15 +309,11 @@ export default async function LogsPage({ searchParams }: Props) {
             <a
               key={t.value}
               href={buildTabUrl(t.value)}
-              style={{
-                padding: '0.6rem 1.25rem',
-                textDecoration: 'none',
-                color: isActive ? '#1d4ed8' : '#6b7280',
-                fontWeight: isActive ? '600' : '400',
-                borderBottom: isActive ? '2px solid #1d4ed8' : '2px solid transparent',
-                marginBottom: '-2px',
-                fontSize: '0.9rem',
-              }}
+              className={`px-5 py-2.5 no-underline text-sm -mb-px transition-colors ${
+                isActive
+                  ? 'text-db-accent font-semibold border-b-2 border-db-accent'
+                  : 'text-db-text-muted hover:text-db-text-secondary border-b-2 border-transparent'
+              }`}
             >
               {t.label}
             </a>
@@ -328,166 +322,146 @@ export default async function LogsPage({ searchParams }: Props) {
       </div>
 
       {/* Count */}
-      <p style={{ margin: '0 0 1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+      <p className="text-sm text-db-text-muted mb-4">
         {totalCount.toLocaleString('pt-BR')} registro{totalCount !== 1 ? 's' : ''}
       </p>
 
       {/* VENDAS TABLE */}
       {safeTab === 'vendas' && (
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-                {['Data/Hora', 'Cliente', 'Cartão', 'Valor', 'Pontos', 'Registrado por'].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      padding: '0.75rem 1rem',
-                      textAlign: 'left',
-                      color: '#6b7280',
-                      fontWeight: '500',
-                      fontSize: '0.8rem',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {salesRows.length === 0 ? (
-                <tr>
-                  <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#9ca3af' }}>
-                    Nenhuma venda encontrada para este período.
-                  </td>
+        <div className="db-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-db-border">
+                  {['Data/Hora', 'Cliente', 'Cartão', 'Valor', 'Pontos', 'Registrado por'].map((h) => (
+                    <th
+                      key={h}
+                      className="text-left px-4 py-3 text-xs font-medium text-db-text-muted uppercase tracking-wider whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ) : (
-                salesRows.map((sale) => {
-                  const customer = sale.customer_id ? customerMap.get(sale.customer_id) : null
-                  const staffRole = sale.staff_id ? staffRoleMap.get(sale.staff_id) : null
-                  return (
-                    <tr key={sale.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      <td style={{ padding: '0.75rem 1rem', color: '#374151', fontSize: '0.8rem' }}>
-                        {formatDateTime(sale.created_at)}
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#374151' }}>
-                        {customer?.name ?? '—'}
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#374151', fontFamily: 'monospace', fontSize: '0.8rem' }}>
-                        {customer?.card_number ?? '—'}
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#374151' }}>
-                        {formatBRL(sale.amount_cents)}
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#059669', fontWeight: '500' }}>
-                        +{sale.points_earned}
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#374151', fontSize: '0.8rem' }}>
-                        {staffRole ? (ROLE_LABELS[staffRole] ?? staffRole) : '—'}
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {salesRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-db-text-muted">
+                      Nenhuma venda encontrada para este período.
+                    </td>
+                  </tr>
+                ) : (
+                  salesRows.map((sale) => {
+                    const customer = sale.customer_id ? customerMap.get(sale.customer_id) : null
+                    const staffRole = sale.staff_id ? staffRoleMap.get(sale.staff_id) : null
+                    return (
+                      <tr key={sale.id} className="border-b border-db-border last:border-b-0 transition-colors hover:bg-white/[0.02]">
+                        <td className="px-4 py-3 text-db-text-secondary text-xs">
+                          {formatDateTime(sale.created_at)}
+                        </td>
+                        <td className="px-4 py-3 text-db-text-secondary">
+                          {customer?.name ?? '—'}
+                        </td>
+                        <td className="px-4 py-3 text-db-text-secondary font-mono text-xs">
+                          {customer?.card_number ?? '—'}
+                        </td>
+                        <td className="px-4 py-3 text-db-text-secondary">
+                          {formatBRL(sale.amount_cents)}
+                        </td>
+                        <td className="px-4 py-3 text-db-success font-medium">
+                          +{sale.points_earned}
+                        </td>
+                        <td className="px-4 py-3 text-db-text-secondary text-xs">
+                          {staffRole ? (ROLE_LABELS[staffRole] ?? staffRole) : '—'}
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* ATIVIDADE TABLE */}
       {safeTab === 'atividade' && (
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-                {['Data/Hora', 'Cliente', 'Tipo', 'Pontos', 'Saldo', 'Gerente', 'Nota'].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      padding: '0.75rem 1rem',
-                      textAlign: 'left',
-                      color: '#6b7280',
-                      fontWeight: '500',
-                      fontSize: '0.8rem',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {auditRows.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: '#9ca3af' }}>
-                    Nenhuma atividade encontrada para este período.
-                  </td>
+        <div className="db-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-db-border">
+                  {['Data/Hora', 'Cliente', 'Tipo', 'Pontos', 'Saldo', 'Gerente', 'Nota'].map((h) => (
+                    <th
+                      key={h}
+                      className="text-left px-4 py-3 text-xs font-medium text-db-text-muted uppercase tracking-wider whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ) : (
-                auditRows.map((tx) => {
-                  const customer = tx.customer_id ? auditCustomerMap.get(tx.customer_id) : null
-                  const staffRole =
-                    tx.transaction_type === 'earn' && tx.reference_id
-                      ? auditSalesStaffMap.get(tx.reference_id)
-                      : undefined
-                  return (
-                    <tr key={tx.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      <td style={{ padding: '0.75rem 1rem', color: '#374151', fontSize: '0.8rem' }}>
-                        {formatDateTime(tx.created_at)}
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#374151' }}>
-                        {customer?.name ?? '—'}
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#374151' }}>
-                        {TRANSACTION_TYPE_LABELS[tx.transaction_type] ?? tx.transaction_type}
-                      </td>
-                      <td
-                        style={{
-                          padding: '0.75rem 1rem',
-                          color: tx.points_delta >= 0 ? '#059669' : '#dc2626',
-                          fontWeight: '500',
-                        }}
-                      >
-                        {tx.points_delta >= 0 ? '+' : ''}{tx.points_delta}
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#6b7280' }}>
-                        {tx.balance_after}
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#374151', fontSize: '0.8rem' }}>
-                        {staffRole ? (ROLE_LABELS[staffRole] ?? staffRole) : '—'}
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#6b7280', fontSize: '0.8rem' }}>
-                        {tx.note ?? '—'}
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {auditRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-db-text-muted">
+                      Nenhuma atividade encontrada para este período.
+                    </td>
+                  </tr>
+                ) : (
+                  auditRows.map((tx) => {
+                    const customer = tx.customer_id ? auditCustomerMap.get(tx.customer_id) : null
+                    const staffRole =
+                      tx.transaction_type === 'earn' && tx.reference_id
+                        ? auditSalesStaffMap.get(tx.reference_id)
+                        : undefined
+                    const badgeClass = TRANSACTION_TYPE_BADGE[tx.transaction_type] ?? 'bg-white/[0.06] text-db-text-secondary'
+                    return (
+                      <tr key={tx.id} className="border-b border-db-border last:border-b-0 transition-colors hover:bg-white/[0.02]">
+                        <td className="px-4 py-3 text-db-text-secondary text-xs">
+                          {formatDateTime(tx.created_at)}
+                        </td>
+                        <td className="px-4 py-3 text-db-text-secondary">
+                          {customer?.name ?? '—'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${badgeClass}`}>
+                            {TRANSACTION_TYPE_LABELS[tx.transaction_type] ?? tx.transaction_type}
+                          </span>
+                        </td>
+                        <td className={`px-4 py-3 font-medium ${tx.points_delta >= 0 ? 'text-db-success' : 'text-db-error'}`}>
+                          {tx.points_delta >= 0 ? '+' : ''}{tx.points_delta}
+                        </td>
+                        <td className="px-4 py-3 text-db-text-muted">
+                          {tx.balance_after}
+                        </td>
+                        <td className="px-4 py-3 text-db-text-secondary text-xs">
+                          {staffRole ? (ROLE_LABELS[staffRole] ?? staffRole) : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-db-text-muted text-xs">
+                          {tx.note ?? '—'}
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: '#6b7280' }}>
+        <div className="flex justify-between items-center mt-4">
+          <p className="text-sm text-db-text-muted">
             Página {pageNum} de {totalPages}
           </p>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="flex gap-2">
             {pageNum > 1 && (
               <a
                 href={buildTabUrl(safeTab, String(pageNum - 1))}
-                style={{
-                  padding: '0.5rem 0.75rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  textDecoration: 'none',
-                  color: '#374151',
-                  fontSize: '0.875rem',
-                }}
+                className="rounded-lg border border-db-border px-3 py-2 text-sm text-db-text-secondary no-underline transition-colors hover:bg-white/[0.03]"
               >
                 Anterior
               </a>
@@ -495,14 +469,7 @@ export default async function LogsPage({ searchParams }: Props) {
             {pageNum < totalPages && (
               <a
                 href={buildTabUrl(safeTab, String(pageNum + 1))}
-                style={{
-                  padding: '0.5rem 0.75rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  textDecoration: 'none',
-                  color: '#374151',
-                  fontSize: '0.875rem',
-                }}
+                className="rounded-lg border border-db-border px-3 py-2 text-sm text-db-text-secondary no-underline transition-colors hover:bg-white/[0.03]"
               >
                 Próxima
               </a>

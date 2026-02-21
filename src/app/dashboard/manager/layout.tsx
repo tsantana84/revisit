@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { jwtDecode } from 'jwt-decode'
 import { logout } from '@/lib/actions/auth'
+import DashboardNav from '../DashboardNav'
 
 interface RevisitClaims {
   restaurant_id?: string
@@ -10,12 +11,15 @@ interface RevisitClaims {
   exp: number
 }
 
+const NAV_ITEMS = [
+  { href: '/dashboard/manager', label: 'Painel' },
+]
+
 export default async function ManagerLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // Defense-in-depth role check (middleware does fast redirect; layout does authoritative check)
   const supabase = await createClient()
 
   const {
@@ -41,46 +45,20 @@ export default async function ManagerLayout({
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+    <div className="dark flex min-h-screen font-sans">
       {/* Sidebar */}
-      <aside
-        style={{
-          width: '220px',
-          backgroundColor: '#111827',
-          color: '#ffffff',
-          padding: '1.5rem 1rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.5rem',
-        }}
-      >
-        <div style={{ marginBottom: '1.5rem' }}>
-          <span style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>Revisit</span>
+      <aside className="flex w-[220px] flex-col gap-2 border-r border-db-border bg-db-bg px-3 py-6">
+        <div className="mb-4 px-3">
+          <span className="text-lg font-bold text-db-text">Revisit</span>
         </div>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          <a
-            href="/dashboard/manager"
-            style={{ color: '#d1d5db', textDecoration: 'none', padding: '0.5rem 0.75rem', borderRadius: '4px' }}
-          >
-            Painel
-          </a>
-        </nav>
+        <DashboardNav items={NAV_ITEMS} />
 
-        <div style={{ marginTop: 'auto' }}>
+        <div className="mt-auto">
           <form action={logout}>
             <button
               type="submit"
-              style={{
-                backgroundColor: 'transparent',
-                color: '#9ca3af',
-                border: '1px solid #374151',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                width: '100%',
-                textAlign: 'left',
-              }}
+              className="w-full rounded-lg border border-db-border px-3 py-2 text-left text-sm text-db-text-muted transition-colors hover:text-db-text-secondary hover:bg-white/[0.03] cursor-pointer"
             >
               Sair
             </button>
@@ -89,7 +67,7 @@ export default async function ManagerLayout({
       </aside>
 
       {/* Main content */}
-      <main style={{ flex: 1, backgroundColor: '#f9fafb', padding: '2rem' }}>
+      <main className="flex-1 overflow-auto bg-db-bg p-6 lg:p-8">
         {children}
       </main>
     </div>

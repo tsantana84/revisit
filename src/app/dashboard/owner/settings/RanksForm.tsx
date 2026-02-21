@@ -24,15 +24,6 @@ interface RankRow {
   discount_pct: number
 }
 
-const inputStyle: React.CSSProperties = {
-  padding: '0.375rem 0.5rem',
-  border: '1px solid #d1d5db',
-  borderRadius: '4px',
-  fontSize: '0.875rem',
-  width: '100%',
-  boxSizing: 'border-box',
-}
-
 let nextTempId = 1
 
 function makeTempId() {
@@ -83,47 +74,37 @@ export function RanksForm({ ranks }: RanksFormProps) {
     <form action={handleSubmit}>
       {state?.message && (
         <p
-          style={{
-            padding: '0.75rem',
-            borderRadius: '4px',
-            marginBottom: '1rem',
-            backgroundColor: state.success ? '#d1fae5' : '#fee2e2',
-            color: state.success ? '#065f46' : '#dc2626',
-            fontSize: '0.875rem',
-          }}
+          className={`px-3 py-2.5 rounded-lg mb-4 text-sm ${
+            state.success
+              ? 'bg-emerald-500/10 border border-emerald-500/20 text-db-success'
+              : 'bg-red-500/10 border border-red-500/20 text-db-error'
+          }`}
         >
           {state.message}
         </p>
       )}
 
       {state?.errors && state.errors.length > 0 && (
-        <ul style={{ color: '#dc2626', fontSize: '0.75rem', marginBottom: '1rem', paddingLeft: '1rem' }}>
+        <ul className="text-db-error text-xs mb-4 pl-4 list-disc">
           {state.errors.map((err, i) => (
             <li key={i}>{err}</li>
           ))}
         </ul>
       )}
 
-      <div style={{ marginBottom: '1rem' }}>
+      <div className="mb-4 overflow-x-auto">
         {/* Header row */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 140px 140px 120px 80px',
-            gap: '0.5rem',
-            marginBottom: '0.5rem',
-          }}
-        >
-          <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#6b7280' }}>
+        <div className="grid grid-cols-[1fr_140px_140px_120px_80px] gap-2 mb-2 min-w-[600px]">
+          <span className="text-xs font-medium text-db-text-muted uppercase tracking-wider">
             Nome do nível
           </span>
-          <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#6b7280' }}>
-            Visitas mínimas
+          <span className="text-xs font-medium text-db-text-muted uppercase tracking-wider">
+            Visitas mín.
           </span>
-          <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#6b7280' }}>
+          <span className="text-xs font-medium text-db-text-muted uppercase tracking-wider">
             Multiplicador
           </span>
-          <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#6b7280' }}>
+          <span className="text-xs font-medium text-db-text-muted uppercase tracking-wider">
             Desconto (%)
           </span>
           <span />
@@ -132,20 +113,14 @@ export function RanksForm({ ranks }: RanksFormProps) {
         {rows.map((row) => (
           <div
             key={row.id}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 140px 140px 120px 80px',
-              gap: '0.5rem',
-              marginBottom: '0.5rem',
-              alignItems: 'center',
-            }}
+            className="grid grid-cols-[1fr_140px_140px_120px_80px] gap-2 mb-2 items-center min-w-[600px]"
           >
             <input
               type="text"
               value={row.name}
               onChange={(e) => updateRow(row.id, 'name', e.target.value)}
               placeholder="Nome"
-              style={inputStyle}
+              className="db-input"
               required
             />
             <input
@@ -154,7 +129,7 @@ export function RanksForm({ ranks }: RanksFormProps) {
               onChange={(e) => updateRow(row.id, 'min_visits', parseInt(e.target.value) || 0)}
               min={0}
               step={1}
-              style={inputStyle}
+              className="db-input"
               aria-label="Visitas mínimas"
             />
             <input
@@ -164,7 +139,7 @@ export function RanksForm({ ranks }: RanksFormProps) {
               min={0.1}
               max={10}
               step={0.1}
-              style={inputStyle}
+              className="db-input"
               aria-label="Multiplicador"
             />
             <input
@@ -176,23 +151,18 @@ export function RanksForm({ ranks }: RanksFormProps) {
               min={0}
               max={100}
               step={0.1}
-              style={inputStyle}
+              className="db-input"
               aria-label="Desconto (%)"
             />
             <button
               type="button"
               onClick={() => removeRank(row.id)}
               disabled={rows.length <= 1}
-              style={{
-                backgroundColor: 'transparent',
-                color: rows.length <= 1 ? '#d1d5db' : '#dc2626',
-                border: '1px solid',
-                borderColor: rows.length <= 1 ? '#d1d5db' : '#fca5a5',
-                padding: '0.375rem 0.5rem',
-                borderRadius: '4px',
-                fontSize: '0.75rem',
-                cursor: rows.length <= 1 ? 'not-allowed' : 'pointer',
-              }}
+              className={`px-2 py-1.5 rounded-lg border text-xs cursor-pointer ${
+                rows.length <= 1
+                  ? 'border-db-border text-db-text-muted cursor-not-allowed opacity-40'
+                  : 'border-red-500/30 text-db-error hover:bg-red-500/10'
+              }`}
             >
               Remover
             </button>
@@ -200,19 +170,11 @@ export function RanksForm({ ranks }: RanksFormProps) {
         ))}
       </div>
 
-      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+      <div className="flex gap-3 items-center">
         <button
           type="button"
           onClick={addRank}
-          style={{
-            backgroundColor: 'transparent',
-            color: '#374151',
-            border: '1px solid #d1d5db',
-            padding: '0.5rem 1rem',
-            borderRadius: '4px',
-            fontSize: '0.875rem',
-            cursor: 'pointer',
-          }}
+          className="rounded-lg border border-db-border px-4 py-2 text-sm text-db-text-secondary transition-colors hover:bg-white/[0.03] cursor-pointer"
         >
           Adicionar nível
         </button>
@@ -220,17 +182,7 @@ export function RanksForm({ ranks }: RanksFormProps) {
         <button
           type="submit"
           disabled={pending}
-          style={{
-            backgroundColor: '#111827',
-            color: '#ffffff',
-            padding: '0.5rem 1.25rem',
-            border: 'none',
-            borderRadius: '4px',
-            fontSize: '0.875rem',
-            fontWeight: '500',
-            cursor: pending ? 'not-allowed' : 'pointer',
-            opacity: pending ? 0.6 : 1,
-          }}
+          className="rounded-lg bg-db-accent px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-db-accent-hover disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {pending ? 'Salvando...' : 'Salvar níveis'}
         </button>

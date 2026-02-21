@@ -9,7 +9,6 @@ import type { RedemptionState, RewardInfo } from '@/lib/actions/rewards'
 
 // ---------------------------------------------------------------------------
 // RewardSection — displayed after successful sale
-// Calls checkRewardForCurrentManager which resolves restaurantId from JWT.
 // ---------------------------------------------------------------------------
 
 function RewardSection({ cardNumber }: { cardNumber: string }) {
@@ -34,19 +33,11 @@ function RewardSection({ cardNumber }: { cardNumber: string }) {
 
   if (redemptionState?.step === 'success') {
     return (
-      <div
-        style={{
-          backgroundColor: '#f0fdf4',
-          border: '1px solid #bbf7d0',
-          borderRadius: '8px',
-          padding: '1rem 1.25rem',
-          marginTop: '1rem',
-        }}
-      >
-        <p style={{ color: '#16a34a', fontWeight: '600', margin: 0 }}>
+      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mt-4">
+        <p className="text-db-success font-semibold m-0">
           {redemptionState.message}
         </p>
-        <p style={{ color: '#166534', margin: '0.25rem 0 0' }}>
+        <p className="text-emerald-300 mt-1 mb-0">
           Saldo atualizado: {redemptionState.newBalance} pontos
         </p>
       </div>
@@ -55,19 +46,11 @@ function RewardSection({ cardNumber }: { cardNumber: string }) {
 
   if (!rewardInfo) {
     return (
-      <div style={{ marginTop: '1.25rem' }}>
+      <div className="mt-5">
         <button
           onClick={handleCheckReward}
           disabled={loading}
-          style={{
-            backgroundColor: '#f3f4f6',
-            color: '#374151',
-            border: '1px solid #d1d5db',
-            padding: '0.5rem 1rem',
-            borderRadius: '6px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            fontSize: '0.875rem',
-          }}
+          className="rounded-lg border border-db-border bg-white/[0.03] px-4 py-2.5 text-sm text-db-text-secondary transition-colors hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
         >
           {loading ? 'Verificando...' : 'Verificar Recompensa'}
         </button>
@@ -76,26 +59,18 @@ function RewardSection({ cardNumber }: { cardNumber: string }) {
   }
 
   return (
-    <div
-      style={{
-        backgroundColor: '#fefce8',
-        border: '1px solid #fde68a',
-        borderRadius: '8px',
-        padding: '1rem 1.25rem',
-        marginTop: '1rem',
-      }}
-    >
-      <p style={{ fontWeight: '600', color: '#92400e', marginTop: 0, marginBottom: '0.5rem' }}>
+    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mt-4">
+      <p className="font-semibold text-amber-300 mt-0 mb-2">
         Recompensas disponíveis
       </p>
 
       {rewardInfo.type === 'cashback' && (
         <div>
-          <p style={{ margin: 0, color: '#1c1917' }}>
+          <p className="m-0 text-db-text">
             Crédito disponível:{' '}
             <strong>R$ {rewardInfo.availableCredit.toFixed(2)}</strong>
           </p>
-          <p style={{ margin: '0.25rem 0 0', color: '#78716c', fontSize: '0.8rem' }}>
+          <p className="mt-1 mb-0 text-db-text-muted text-sm">
             Saldo: {rewardInfo.pointsBalance} pontos
           </p>
         </div>
@@ -103,7 +78,7 @@ function RewardSection({ cardNumber }: { cardNumber: string }) {
 
       {rewardInfo.type === 'free_product' && rewardInfo.available && (
         <div>
-          <p style={{ margin: '0 0 0.75rem', color: '#1c1917' }}>
+          <p className="mb-3 mt-0 text-db-text">
             Recompensa disponível: <strong>{rewardInfo.rewardName}</strong>
           </p>
           <form action={redemptionAction}>
@@ -113,15 +88,7 @@ function RewardSection({ cardNumber }: { cardNumber: string }) {
             <button
               type="submit"
               disabled={redemptionPending}
-              style={{
-                backgroundColor: '#2563eb',
-                color: '#ffffff',
-                border: 'none',
-                padding: '0.5rem 1rem',
-                borderRadius: '6px',
-                cursor: redemptionPending ? 'not-allowed' : 'pointer',
-                fontWeight: '600',
-              }}
+              className="rounded-lg bg-db-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-db-accent-hover disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
             >
               {redemptionPending ? 'Resgatando...' : 'Resgatar'}
             </button>
@@ -130,13 +97,13 @@ function RewardSection({ cardNumber }: { cardNumber: string }) {
       )}
 
       {rewardInfo.type === 'free_product' && !rewardInfo.available && (
-        <p style={{ margin: 0, color: '#6b7280' }}>
+        <p className="m-0 text-db-text-muted">
           Sem recompensas disponíveis ainda.
         </p>
       )}
 
       {rewardInfo.type === 'progressive_discount' && (
-        <p style={{ margin: 0, color: '#1c1917' }}>
+        <p className="m-0 text-db-text">
           Desconto de{' '}
           <strong>{rewardInfo.discountPct}%</strong>{' '}
           ({rewardInfo.rankName}) — aplicar na compra
@@ -144,11 +111,11 @@ function RewardSection({ cardNumber }: { cardNumber: string }) {
       )}
 
       {rewardInfo.type === 'none' && (
-        <p style={{ margin: 0, color: '#6b7280' }}>Nenhuma recompensa configurada.</p>
+        <p className="m-0 text-db-text-muted">Nenhuma recompensa configurada.</p>
       )}
 
       {redemptionState?.step === 'error' && (
-        <p style={{ color: '#dc2626', marginTop: '0.5rem', marginBottom: 0 }}>
+        <p className="text-db-error mt-2 mb-0">
           {redemptionState.message}
         </p>
       )}
@@ -179,18 +146,15 @@ export default function ManagerDashboardPage() {
   }
 
   function handleNewSale() {
-    // Reload to clear all useActionState hooks — simplest reliable pattern
     window.location.reload()
   }
 
-  // Determine current phase
   const showPhase3 = saleState?.step === 'success'
   const showPhase2 =
     !cancelled &&
     lookupState?.step === 'preview' &&
     saleState?.step !== 'success'
 
-  // Client-side card validation feedback
   const cardInputHasError =
     cardInput.length >= 7 && !validateCardNumber(cardInput)
 
@@ -199,93 +163,44 @@ export default function ManagerDashboardPage() {
   // ---------------------------------------------------------------------------
   if (showPhase3 && saleState.step === 'success') {
     return (
-      <div>
-        <h1
-          style={{
-            fontSize: '1.5rem',
-            fontWeight: 'bold',
-            marginBottom: '1.5rem',
-            color: '#111827',
-          }}
-        >
+      <div className="max-w-lg mx-auto">
+        <h1 className="text-2xl font-bold text-db-text mb-6">
           Registrar Venda
         </h1>
 
-        <div
-          style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '8px',
-            padding: '2rem',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
-            maxWidth: '480px',
-          }}
-        >
+        <div className="db-card p-8">
           {/* Success banner */}
-          <div
-            style={{
-              backgroundColor: '#f0fdf4',
-              border: '1px solid #bbf7d0',
-              borderRadius: '8px',
-              padding: '1rem 1.25rem',
-              marginBottom: '1.25rem',
-            }}
-          >
-            <p
-              style={{
-                color: '#16a34a',
-                fontWeight: '700',
-                fontSize: '1.1rem',
-                margin: '0 0 0.25rem',
-              }}
-            >
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-5">
+            <p className="text-db-success font-bold text-lg mb-1">
               Venda registrada com sucesso!
             </p>
-            <p style={{ color: '#166534', margin: 0 }}>
+            <p className="text-emerald-300 m-0">
               {saleState.pointsEarned} pontos creditados para {saleState.customerName}
             </p>
           </div>
 
           {/* Current balance */}
-          <p style={{ color: '#374151', marginBottom: '0.75rem' }}>
-            Saldo atual: <strong>{saleState.newBalance} pontos</strong>
+          <p className="text-db-text-secondary mb-3">
+            Saldo atual: <strong className="text-db-text">{saleState.newBalance} pontos</strong>
           </p>
 
           {/* Rank promotion notice */}
           {saleState.rankPromoted && saleState.newRankName && (
-            <div
-              style={{
-                backgroundColor: '#fef3c7',
-                border: '1px solid #fcd34d',
-                borderRadius: '8px',
-                padding: '0.75rem 1rem',
-                marginBottom: '1rem',
-              }}
-            >
-              <p style={{ color: '#92400e', fontWeight: '700', margin: 0 }}>
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mb-4">
+              <p className="text-amber-300 font-bold m-0">
                 Cliente promovido para {saleState.newRankName}!
               </p>
             </div>
           )}
 
-          {/* Reward section — card number preserved from lookupState (still in hook state) */}
+          {/* Reward section */}
           {lookupState?.step === 'preview' && (
             <RewardSection cardNumber={lookupState.cardNumber} />
           )}
 
           <button
             onClick={handleNewSale}
-            style={{
-              backgroundColor: '#2563eb',
-              color: '#ffffff',
-              border: 'none',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: '600',
-              fontSize: '1rem',
-              marginTop: '1.5rem',
-              width: '100%',
-            }}
+            className="w-full mt-6 rounded-xl bg-db-accent px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-db-accent-hover cursor-pointer min-h-[44px]"
           >
             Nova Venda
           </button>
@@ -300,71 +215,29 @@ export default function ManagerDashboardPage() {
   if (showPhase2 && lookupState?.step === 'preview') {
     const preview = lookupState
     return (
-      <div>
-        <h1
-          style={{
-            fontSize: '1.5rem',
-            fontWeight: 'bold',
-            marginBottom: '1.5rem',
-            color: '#111827',
-          }}
-        >
+      <div className="max-w-lg mx-auto">
+        <h1 className="text-2xl font-bold text-db-text mb-6">
           Registrar Venda
         </h1>
 
         {/* Customer info card */}
-        <div
-          style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '8px',
-            padding: '1.5rem',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
-            marginBottom: '1rem',
-            maxWidth: '480px',
-          }}
-        >
-          <p
-            style={{
-              fontSize: '1.375rem',
-              fontWeight: '700',
-              color: '#111827',
-              margin: '0 0 0.25rem',
-            }}
-          >
+        <div className="db-card p-6 mb-4">
+          <p className="text-xl font-bold text-db-text mb-1">
             {preview.customerName}
           </p>
-          <span
-            style={{
-              display: 'inline-block',
-              backgroundColor: '#dbeafe',
-              color: '#1d4ed8',
-              borderRadius: '9999px',
-              padding: '0.2rem 0.75rem',
-              fontSize: '0.8rem',
-              fontWeight: '600',
-              marginBottom: '0.75rem',
-            }}
-          >
+          <span className="inline-block bg-db-accent/20 text-db-accent rounded-full px-3 py-0.5 text-xs font-semibold mb-3">
             {preview.currentRank}
           </span>
-          <p style={{ color: '#6b7280', margin: 0, fontSize: '0.9rem' }}>
+          <p className="text-db-text-muted text-sm m-0">
             Saldo atual: {preview.pointsBalance} pontos
           </p>
         </div>
 
         {/* Confirmation form */}
-        <div
-          style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '8px',
-            padding: '1.5rem',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
-            maxWidth: '480px',
-          }}
-        >
-          <p style={{ color: '#111827', fontSize: '1rem', marginTop: 0 }}>
+        <div className="db-card p-6">
+          <p className="text-db-text mb-4">
             Isso creditará{' '}
-            <strong style={{ color: '#2563eb', fontSize: '1.1rem' }}>
+            <strong className="text-db-accent text-lg">
               {preview.pointsPreview} pontos
             </strong>{' '}
             para <strong>{preview.customerName}</strong>. Confirmar?
@@ -375,21 +248,11 @@ export default function ManagerDashboardPage() {
             <input type="hidden" name="amount_cents" value={preview.amountCents} />
             <input type="hidden" name="staff_id" value={preview.staffId} />
 
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div className="flex gap-3">
               <button
                 type="submit"
                 disabled={salePending}
-                style={{
-                  backgroundColor: '#2563eb',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '6px',
-                  cursor: salePending ? 'not-allowed' : 'pointer',
-                  fontWeight: '700',
-                  fontSize: '1rem',
-                  flex: 1,
-                }}
+                className="flex-1 rounded-xl bg-db-accent px-6 py-3.5 text-base font-bold text-white transition-colors hover:bg-db-accent-hover disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer min-h-[44px]"
               >
                 {salePending ? 'Processando...' : 'Confirmar Venda'}
               </button>
@@ -397,15 +260,7 @@ export default function ManagerDashboardPage() {
               <button
                 type="button"
                 onClick={handleCancel}
-                style={{
-                  backgroundColor: 'transparent',
-                  color: '#6b7280',
-                  border: '1px solid #d1d5db',
-                  padding: '0.75rem 1.25rem',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                }}
+                className="rounded-xl border border-db-border px-5 py-3.5 text-base font-semibold text-db-text-muted transition-colors hover:bg-white/[0.03] cursor-pointer min-h-[44px]"
               >
                 Cancelar
               </button>
@@ -413,14 +268,7 @@ export default function ManagerDashboardPage() {
           </form>
 
           {saleState?.step === 'error' && (
-            <p
-              style={{
-                color: '#dc2626',
-                marginTop: '0.75rem',
-                marginBottom: 0,
-                fontSize: '0.9rem',
-              }}
-            >
+            <p className="text-db-error mt-3 mb-0 text-sm">
               {saleState.message}
             </p>
           )}
@@ -430,41 +278,21 @@ export default function ManagerDashboardPage() {
   }
 
   // ---------------------------------------------------------------------------
-  // Phase 1: Card Lookup Form (default / after cancel / after error)
+  // Phase 1: Card Lookup Form
   // ---------------------------------------------------------------------------
   return (
-    <div>
-      <h1
-        style={{
-          fontSize: '1.5rem',
-          fontWeight: 'bold',
-          marginBottom: '1.5rem',
-          color: '#111827',
-        }}
-      >
+    <div className="max-w-lg mx-auto">
+      <h1 className="text-2xl font-bold text-db-text mb-6">
         Registrar Venda
       </h1>
 
-      <div
-        style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '8px',
-          padding: '1.5rem',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
-          maxWidth: '480px',
-        }}
-      >
+      <div className="db-card p-6">
         <form action={lookupAction}>
           {/* Card number */}
-          <div style={{ marginBottom: '1rem' }}>
+          <div className="mb-4">
             <label
               htmlFor="card_number"
-              style={{
-                display: 'block',
-                fontWeight: '600',
-                color: '#374151',
-                marginBottom: '0.4rem',
-              }}
+              className="block font-semibold text-db-text-secondary mb-1.5"
             >
               Número do cartão
             </label>
@@ -478,33 +306,22 @@ export default function ManagerDashboardPage() {
                 setCardInput(e.target.value)
                 if (cancelled) setCancelled(false)
               }}
-              style={{
-                width: '100%',
-                padding: '0.625rem 0.75rem',
-                border: `1px solid ${cardInputHasError ? '#dc2626' : '#d1d5db'}`,
-                borderRadius: '6px',
-                fontSize: '1rem',
-                boxSizing: 'border-box',
-                outline: 'none',
-              }}
+              className={`db-input w-full text-lg font-mono min-h-[44px] ${
+                cardInputHasError ? 'border-db-error' : ''
+              }`}
             />
             {cardInputHasError && (
-              <p style={{ color: '#dc2626', fontSize: '0.8rem', margin: '0.25rem 0 0' }}>
+              <p className="text-db-error text-sm mt-1">
                 Formato inválido — use #XXXX-D (ex: #0001-9)
               </p>
             )}
           </div>
 
           {/* Sale value */}
-          <div style={{ marginBottom: '1.25rem' }}>
+          <div className="mb-5">
             <label
               htmlFor="amount"
-              style={{
-                display: 'block',
-                fontWeight: '600',
-                color: '#374151',
-                marginBottom: '0.4rem',
-              }}
+              className="block font-semibold text-db-text-secondary mb-1.5"
             >
               Valor da venda (R$)
             </label>
@@ -515,46 +332,21 @@ export default function ManagerDashboardPage() {
               step="0.01"
               min="0.01"
               placeholder="0,00"
-              style={{
-                width: '100%',
-                padding: '0.625rem 0.75rem',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '1rem',
-                boxSizing: 'border-box',
-                outline: 'none',
-              }}
+              className="db-input w-full text-lg min-h-[44px]"
             />
           </div>
 
           <button
             type="submit"
             disabled={lookupPending || cardInputHasError}
-            style={{
-              backgroundColor: lookupPending || cardInputHasError ? '#93c5fd' : '#2563eb',
-              color: '#ffffff',
-              border: 'none',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '6px',
-              cursor: lookupPending || cardInputHasError ? 'not-allowed' : 'pointer',
-              fontWeight: '700',
-              fontSize: '1rem',
-              width: '100%',
-            }}
+            className="w-full rounded-xl bg-db-accent px-6 py-3.5 text-base font-bold text-white transition-colors hover:bg-db-accent-hover disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer min-h-[44px]"
           >
             {lookupPending ? 'Buscando...' : 'Buscar Cliente'}
           </button>
         </form>
 
         {lookupState?.step === 'error' && (
-          <p
-            style={{
-              color: '#dc2626',
-              marginTop: '0.75rem',
-              marginBottom: 0,
-              fontSize: '0.9rem',
-            }}
-          >
+          <p className="text-db-error mt-3 mb-0 text-sm">
             {lookupState.message}
           </p>
         )}

@@ -18,33 +18,6 @@ interface BrandingFormProps {
   restaurant: Restaurant
 }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '0.5rem 0.75rem',
-  border: '1px solid #d1d5db',
-  borderRadius: '4px',
-  fontSize: '0.875rem',
-  boxSizing: 'border-box',
-}
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: '0.875rem',
-  fontWeight: '500',
-  marginBottom: '0.25rem',
-  color: '#374151',
-}
-
-const errorStyle: React.CSSProperties = {
-  color: '#dc2626',
-  fontSize: '0.75rem',
-  marginTop: '0.25rem',
-}
-
-const fieldStyle: React.CSSProperties = {
-  marginBottom: '1rem',
-}
-
 export function BrandingForm({ restaurant }: BrandingFormProps) {
   const [state, action, pending] = useActionState<BrandingState, FormData>(
     updateBranding,
@@ -55,21 +28,18 @@ export function BrandingForm({ restaurant }: BrandingFormProps) {
     <form action={action}>
       {state?.message && !state?.errors && (
         <p
-          style={{
-            padding: '0.75rem',
-            borderRadius: '4px',
-            marginBottom: '1rem',
-            backgroundColor: state.success ? '#d1fae5' : '#fee2e2',
-            color: state.success ? '#065f46' : '#dc2626',
-            fontSize: '0.875rem',
-          }}
+          className={`px-3 py-2.5 rounded-lg mb-4 text-sm ${
+            state.success
+              ? 'bg-emerald-500/10 border border-emerald-500/20 text-db-success'
+              : 'bg-red-500/10 border border-red-500/20 text-db-error'
+          }`}
         >
           {state.message}
         </p>
       )}
 
-      <div style={fieldStyle}>
-        <label htmlFor="program_name" style={labelStyle}>
+      <div className="mb-4">
+        <label htmlFor="program_name" className="block text-sm font-medium text-db-text-secondary mb-1">
           Nome do programa
         </label>
         <input
@@ -77,18 +47,18 @@ export function BrandingForm({ restaurant }: BrandingFormProps) {
           name="program_name"
           type="text"
           defaultValue={restaurant.program_name ?? ''}
-          style={inputStyle}
+          className="db-input w-full"
           maxLength={100}
           required
         />
         {state?.errors?.program_name && (
-          <p style={errorStyle}>{state.errors.program_name[0]}</p>
+          <p className="text-db-error text-xs mt-1">{state.errors.program_name[0]}</p>
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-        <div style={{ flex: 1 }}>
-          <label htmlFor="primary_color" style={labelStyle}>
+      <div className="flex gap-4 mb-4">
+        <div className="flex-1">
+          <label htmlFor="primary_color" className="block text-sm font-medium text-db-text-secondary mb-1">
             Cor primária
           </label>
           <input
@@ -96,15 +66,15 @@ export function BrandingForm({ restaurant }: BrandingFormProps) {
             name="primary_color"
             type="color"
             defaultValue={restaurant.primary_color}
-            style={{ width: '100%', height: '2.5rem', borderRadius: '4px', border: '1px solid #d1d5db', cursor: 'pointer' }}
+            className="w-full h-10 rounded-lg border border-db-border bg-db-surface cursor-pointer"
           />
           {state?.errors?.primary_color && (
-            <p style={errorStyle}>{state.errors.primary_color[0]}</p>
+            <p className="text-db-error text-xs mt-1">{state.errors.primary_color[0]}</p>
           )}
         </div>
 
-        <div style={{ flex: 1 }}>
-          <label htmlFor="secondary_color" style={labelStyle}>
+        <div className="flex-1">
+          <label htmlFor="secondary_color" className="block text-sm font-medium text-db-text-secondary mb-1">
             Cor secundária
           </label>
           <input
@@ -112,16 +82,16 @@ export function BrandingForm({ restaurant }: BrandingFormProps) {
             name="secondary_color"
             type="color"
             defaultValue={restaurant.secondary_color}
-            style={{ width: '100%', height: '2.5rem', borderRadius: '4px', border: '1px solid #d1d5db', cursor: 'pointer' }}
+            className="w-full h-10 rounded-lg border border-db-border bg-db-surface cursor-pointer"
           />
           {state?.errors?.secondary_color && (
-            <p style={errorStyle}>{state.errors.secondary_color[0]}</p>
+            <p className="text-db-error text-xs mt-1">{state.errors.secondary_color[0]}</p>
           )}
         </div>
       </div>
 
-      <div style={fieldStyle}>
-        <label htmlFor="earn_rate" style={labelStyle}>
+      <div className="mb-4">
+        <label htmlFor="earn_rate" className="block text-sm font-medium text-db-text-secondary mb-1">
           Pontos por R$1 gasto
         </label>
         <input
@@ -132,34 +102,34 @@ export function BrandingForm({ restaurant }: BrandingFormProps) {
           min={1}
           max={100}
           step={1}
-          style={inputStyle}
+          className="db-input w-full"
         />
         {state?.errors?.earn_rate && (
-          <p style={errorStyle}>{state.errors.earn_rate[0]}</p>
+          <p className="text-db-error text-xs mt-1">{state.errors.earn_rate[0]}</p>
         )}
       </div>
 
-      <div style={fieldStyle}>
-        <label htmlFor="reward_type" style={labelStyle}>
+      <div className="mb-4">
+        <label htmlFor="reward_type" className="block text-sm font-medium text-db-text-secondary mb-1">
           Tipo de recompensa
         </label>
         <select
           id="reward_type"
           name="reward_type"
           defaultValue={restaurant.reward_type}
-          style={inputStyle}
+          className="db-input w-full"
         >
           <option value="cashback">Cashback</option>
           <option value="free_product">Produto Grátis</option>
           <option value="progressive_discount">Desconto Progressivo</option>
         </select>
         {state?.errors?.reward_type && (
-          <p style={errorStyle}>{state.errors.reward_type[0]}</p>
+          <p className="text-db-error text-xs mt-1">{state.errors.reward_type[0]}</p>
         )}
       </div>
 
-      <div style={fieldStyle}>
-        <label htmlFor="point_expiry_days" style={labelStyle}>
+      <div className="mb-4">
+        <label htmlFor="point_expiry_days" className="block text-sm font-medium text-db-text-secondary mb-1">
           Dias para expirar pontos
         </label>
         <input
@@ -169,27 +139,17 @@ export function BrandingForm({ restaurant }: BrandingFormProps) {
           defaultValue={restaurant.point_expiry_days ?? ''}
           min={0}
           placeholder="Deixe vazio para nunca expirar"
-          style={inputStyle}
+          className="db-input w-full"
         />
         {state?.errors?.point_expiry_days && (
-          <p style={errorStyle}>{state.errors.point_expiry_days[0]}</p>
+          <p className="text-db-error text-xs mt-1">{state.errors.point_expiry_days[0]}</p>
         )}
       </div>
 
       <button
         type="submit"
         disabled={pending}
-        style={{
-          backgroundColor: '#111827',
-          color: '#ffffff',
-          padding: '0.625rem 1.25rem',
-          border: 'none',
-          borderRadius: '4px',
-          fontSize: '0.875rem',
-          fontWeight: '500',
-          cursor: pending ? 'not-allowed' : 'pointer',
-          opacity: pending ? 0.6 : 1,
-        }}
+        className="rounded-lg bg-db-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-db-accent-hover disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
       >
         {pending ? 'Salvando...' : 'Salvar configurações'}
       </button>

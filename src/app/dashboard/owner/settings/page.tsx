@@ -39,14 +39,14 @@ export default async function SettingsPage() {
   } = await supabase.auth.getSession()
 
   if (!session) {
-    return <p>Sessão inválida. Faça login novamente.</p>
+    return <p className="text-db-text-muted">Sessão inválida. Faça login novamente.</p>
   }
 
   const claims = jwtDecode<RevisitClaims>(session.access_token)
   const restaurantId = claims.restaurant_id
 
   if (!restaurantId) {
-    return <p>Restaurante não encontrado.</p>
+    return <p className="text-db-text-muted">Restaurante não encontrado.</p>
   }
 
   const { data: restaurant } = await supabase
@@ -81,36 +81,36 @@ export default async function SettingsPage() {
   const ranksData: Rank[] = (ranks as Rank[] | null) ?? defaultRanks
 
   return (
-    <div style={{ maxWidth: '720px' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem', color: '#111827' }}>
+    <div className="max-w-[720px]">
+      <h1 className="text-2xl font-bold text-db-text mb-8">
         Configurações
       </h1>
 
-      <section style={{ marginBottom: '2.5rem' }}>
-        <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem', color: '#374151' }}>
+      <section className="mb-10">
+        <h2 className="text-lg font-semibold text-db-text-secondary mb-4">
           Marca
         </h2>
         <BrandingForm restaurant={restaurantData} />
       </section>
 
-      <section style={{ marginBottom: '2.5rem' }}>
-        <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem', color: '#374151' }}>
+      <section className="mb-10">
+        <h2 className="text-lg font-semibold text-db-text-secondary mb-4">
           Logo
         </h2>
         <LogoForm logoUrl={restaurantData.logo_url} programName={restaurantData.program_name} />
       </section>
 
-      <section style={{ marginBottom: '2.5rem' }}>
-        <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem', color: '#374151' }}>
+      <section className="mb-10">
+        <h2 className="text-lg font-semibold text-db-text-secondary mb-4">
           Programa
         </h2>
-        <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1rem' }}>
+        <p className="text-sm text-db-text-muted">
           As configurações de programa fazem parte do formulário de Marca acima.
         </p>
       </section>
 
       <section>
-        <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem', color: '#374151' }}>
+        <h2 className="text-lg font-semibold text-db-text-secondary mb-4">
           Níveis
         </h2>
         <RanksForm ranks={ranksData} />

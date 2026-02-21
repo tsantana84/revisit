@@ -58,7 +58,6 @@ export default async function CustomerPanel({ customerId, closeUrl }: CustomerPa
       .limit(20),
   ])
 
-  // Get rank name if customer has a rank
   let rankName = 'Sem Nível'
   if (customer?.current_rank_id) {
     const { data: rank } = await supabase
@@ -71,120 +70,76 @@ export default async function CustomerPanel({ customerId, closeUrl }: CustomerPa
 
   if (!customer) {
     return (
-      <div style={{
-        position: 'fixed',
-        right: 0,
-        top: 0,
-        width: '400px',
-        height: '100vh',
-        backgroundColor: '#ffffff',
-        boxShadow: '-4px 0 20px rgba(0,0,0,0.15)',
-        padding: '1.5rem',
-        zIndex: 50,
-        overflowY: 'auto',
-      }}>
-        <p style={{ color: '#6b7280' }}>Cliente não encontrado.</p>
-        <a href={closeUrl} style={{ color: '#3b82f6', textDecoration: 'none' }}>Fechar</a>
+      <div className="fixed right-0 top-0 w-[400px] h-screen bg-db-surface border-l border-db-border p-6 z-50 overflow-y-auto shadow-[-4px_0_20px_rgba(0,0,0,0.4)]">
+        <p className="text-db-text-muted">Cliente não encontrado.</p>
+        <a href={closeUrl} className="text-db-accent hover:text-db-accent-hover no-underline">Fechar</a>
       </div>
     )
   }
 
-  const rankColor = RANK_COLORS[rankName] ?? '#6b7280'
+  const rankColor = RANK_COLORS[rankName] ?? '#71717a'
 
   return (
-    <div style={{
-      position: 'fixed',
-      right: 0,
-      top: 0,
-      width: '420px',
-      height: '100vh',
-      backgroundColor: '#ffffff',
-      boxShadow: '-4px 0 20px rgba(0,0,0,0.15)',
-      padding: '1.5rem',
-      zIndex: 50,
-      overflowY: 'auto',
-      fontFamily: 'sans-serif',
-    }}>
+    <div className="fixed right-0 top-0 w-[420px] h-screen bg-db-surface border-l border-db-border p-6 z-50 overflow-y-auto shadow-[-4px_0_20px_rgba(0,0,0,0.4)]">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+      <div className="flex justify-between items-start mb-6">
         <div>
-          <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.25rem', fontWeight: 'bold', color: '#111827' }}>
+          <h2 className="text-xl font-bold text-db-text mb-1">
             {customer.name}
           </h2>
-          <p style={{ margin: '0 0 0.25rem', fontSize: '0.875rem', color: '#6b7280' }}>
+          <p className="text-sm text-db-text-muted mb-1">
             {customer.phone}
           </p>
-          <p style={{ margin: 0, fontSize: '0.8rem', color: '#9ca3af', fontFamily: 'monospace' }}>
+          <p className="text-xs text-db-text-muted font-mono">
             {customer.card_number}
           </p>
         </div>
         <a
           href={closeUrl}
-          style={{
-            color: '#6b7280',
-            textDecoration: 'none',
-            fontSize: '1.25rem',
-            padding: '0.25rem 0.5rem',
-            borderRadius: '4px',
-            border: '1px solid #e5e7eb',
-          }}
+          className="text-db-text-muted hover:text-db-text text-xl px-2 py-1 rounded-lg border border-db-border hover:bg-white/[0.03] no-underline"
         >
           ×
         </a>
       </div>
 
       {/* Rank badge */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <span style={{
-          display: 'inline-block',
-          backgroundColor: rankColor,
-          color: '#fff',
-          padding: '0.25rem 0.75rem',
-          borderRadius: '999px',
-          fontSize: '0.8rem',
-          fontWeight: '600',
-        }}>
+      <div className="mb-6">
+        <span
+          className="inline-block px-3 py-1 rounded-full text-xs font-semibold text-white"
+          style={{ backgroundColor: rankColor }}
+        >
           {rankName}
         </span>
       </div>
 
       {/* Stats */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '0.75rem',
-        marginBottom: '1.5rem',
-      }}>
+      <div className="grid grid-cols-2 gap-3 mb-6">
         {[
           { label: 'Saldo de Pontos', value: (customer.points_balance ?? 0).toLocaleString('pt-BR') },
           { label: 'Visitas', value: (customer.visit_count ?? 0).toLocaleString('pt-BR') },
           { label: 'Gasto Total', value: formatBRL(customer.total_spend ?? 0) },
           { label: 'Membro desde', value: formatDate(customer.created_at) },
         ].map((stat) => (
-          <div key={stat.label} style={{
-            backgroundColor: '#f9fafb',
-            borderRadius: '6px',
-            padding: '0.75rem',
-          }}>
-            <p style={{ margin: '0 0 0.25rem', fontSize: '0.75rem', color: '#6b7280' }}>{stat.label}</p>
-            <p style={{ margin: 0, fontSize: '1rem', fontWeight: '600', color: '#111827' }}>{stat.value}</p>
+          <div key={stat.label} className="bg-white/[0.03] border border-db-border rounded-lg p-3">
+            <p className="text-xs text-db-text-muted mb-1">{stat.label}</p>
+            <p className="text-base font-semibold text-db-text">{stat.value}</p>
           </div>
         ))}
       </div>
 
       {/* Transaction history */}
       <div>
-        <h3 style={{ margin: '0 0 0.75rem', fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
+        <h3 className="text-sm font-semibold text-db-text-secondary mb-3">
           Histórico de Transações
         </h3>
         {(transactions ?? []).length === 0 ? (
-          <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>Nenhuma transação encontrada.</p>
+          <p className="text-sm text-db-text-muted">Nenhuma transação encontrada.</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+          <table className="w-full text-xs">
             <thead>
-              <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+              <tr className="border-b border-db-border">
                 {['Data', 'Tipo', 'Pontos', 'Saldo'].map((h) => (
-                  <th key={h} style={{ padding: '0.5rem 0.25rem', textAlign: 'left', color: '#6b7280', fontWeight: '500' }}>
+                  <th key={h} className="text-left py-2 px-1 text-db-text-muted font-medium">
                     {h}
                   </th>
                 ))}
@@ -192,21 +147,17 @@ export default async function CustomerPanel({ customerId, closeUrl }: CustomerPa
             </thead>
             <tbody>
               {(transactions ?? []).map((tx) => (
-                <tr key={tx.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                  <td style={{ padding: '0.5rem 0.25rem', color: '#374151' }}>
+                <tr key={tx.id} className="border-b border-db-border last:border-b-0">
+                  <td className="py-2 px-1 text-db-text-secondary">
                     {formatDateTime(tx.created_at)}
                   </td>
-                  <td style={{ padding: '0.5rem 0.25rem', color: '#374151' }}>
+                  <td className="py-2 px-1 text-db-text-secondary">
                     {TRANSACTION_TYPE_LABELS[tx.transaction_type] ?? tx.transaction_type}
                   </td>
-                  <td style={{
-                    padding: '0.5rem 0.25rem',
-                    color: tx.points_delta >= 0 ? '#059669' : '#dc2626',
-                    fontWeight: '500',
-                  }}>
+                  <td className={`py-2 px-1 font-medium ${tx.points_delta >= 0 ? 'text-db-success' : 'text-db-error'}`}>
                     {tx.points_delta >= 0 ? '+' : ''}{tx.points_delta}
                   </td>
-                  <td style={{ padding: '0.5rem 0.25rem', color: '#6b7280' }}>
+                  <td className="py-2 px-1 text-db-text-muted">
                     {tx.balance_after}
                   </td>
                 </tr>
