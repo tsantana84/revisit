@@ -1,26 +1,23 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { auth } from '@clerk/nextjs/server'
+import { createClient } from '@supabase/supabase-js'
 
-export async function createClient() {
-  const cookieStore = await cookies()
-  return createServerClient(
+/**
+ * Creates a Supabase client authenticated with the current Clerk user's JWT.
+ * The JWT comes from a Clerk JWT Template named 'supabase' that includes
+ * restaurant_id and app_role claims for RLS.
+ *
+ * Use in Server Actions, Route Handlers, and Server Components.
+ */
+export async function createClerkSupabaseClient() {
+  const { getToken } = await auth()
+  const token = await getToken({ template: 'supabase' })
+
+  return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // setAll can fail in Server Components (read-only cookies)
-            // This is expected — middleware handles the write
-          }
-        },
+      global: {
+        headers: { Authorization: `Bearer ${token}` },
       },
     }
   )
