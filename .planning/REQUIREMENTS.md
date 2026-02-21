@@ -25,9 +25,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Points Engine
 
-- [ ] **PTS-01**: Points are awarded per sale based on: sale value (R$) × points per R$ × rank multiplier
-- [ ] **PTS-02**: Owner can configure the points-per-R$ earn rate (default: 2 points per R$1)
-- [ ] **PTS-03**: Points are credited automatically after manager confirms a sale
+- [x] **PTS-01**: Points are awarded per sale based on: sale value (R$) × points per R$ × rank multiplier
+- [x] **PTS-02**: Owner can configure the points-per-R$ earn rate (default: 2 points per R$1)
+- [x] **PTS-03**: Points are credited automatically after manager confirms a sale
 - [ ] **PTS-04**: Wallet card updates automatically after every transaction (points balance)
 - [x] **PTS-05**: Owner can configure point expiry rules (expiry not enforced in POC, but configurable)
 
@@ -35,9 +35,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **RANK-01**: Owner can configure rank names, visit thresholds, and point multipliers
 - [x] **RANK-02**: Default ranks are: Bronze (0+ visits, 1x), Prata (5+ visits, 1.5x), Gold (15+ visits, 2x), VIP (30+ visits, 3x)
-- [ ] **RANK-03**: Customer rank is determined by total number of visits (not points)
-- [ ] **RANK-04**: When a customer crosses a rank threshold, they are promoted automatically
-- [ ] **RANK-05**: Wallet card color changes and customer receives a push notification on rank promotion
+- [x] **RANK-03**: Customer rank is determined by total number of visits (not points)
+- [x] **RANK-04**: When a customer crosses a rank threshold, they are promoted automatically
+- [x] **RANK-05**: Wallet card color changes and customer receives a push notification on rank promotion
 
 ### Rewards
 
@@ -141,16 +141,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CARD-03 | Phase 3 | Complete |
 | CARD-04 | Phase 4 | Pending |
 | CARD-05 | Phase 4 | Pending |
-| PTS-01 | Phase 3 | Pending |
-| PTS-02 | Phase 3 | Pending |
-| PTS-03 | Phase 3 | Pending |
+| PTS-01 | Phase 3 | Complete |
+| PTS-02 | Phase 3 | Complete |
+| PTS-03 | Phase 3 | Complete |
 | PTS-04 | Phase 4 | Pending |
 | PTS-05 | Phase 3 | Complete |
 | RANK-01 | Phase 3 | Pending |
 | RANK-02 | Phase 3 | Complete |
-| RANK-03 | Phase 3 | Pending |
-| RANK-04 | Phase 3 | Pending |
-| RANK-05 | Phase 3 | Pending |
+| RANK-03 | Phase 3 | Complete |
+| RANK-04 | Phase 3 | Complete |
+| RANK-05 | Phase 3 | Complete |
 | RWRD-01 | Phase 3 | Pending |
 | RWRD-02 | Phase 3 | Pending |
 | RWRD-03 | Phase 3 | Pending |

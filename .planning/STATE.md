@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 3 of 5 (Loyalty Engine + Manager POS)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-21 — Completed 03-01 (loyalty engine foundation: card number utility, register_sale/register_redemption RPCs, seed data update)
+Last activity: 2026-02-21 — Completed 03-02 (POS Server Actions: lookupCustomer, registerSale, dual-role auth)
 
-Progress: [████░░░░░░] 45%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -40,6 +40,7 @@ Progress: [████░░░░░░] 45%
 | Phase 02-owner-setup P02 | 8 | 2 tasks | 2 files |
 | Phase 02-owner-setup P03 | 3 | 2 tasks | 5 files |
 | Phase 03-loyalty-engine-manager-pos P01 | 3 | 2 tasks | 5 files |
+| Phase 03-loyalty-engine-manager-pos P02 | 5 | 1 task | 1 file |
 
 ## Accumulated Context
 
@@ -76,6 +77,11 @@ Recent decisions affecting current work:
 - [02-03]: Zod v4 enum: requires 'as const' array + { error: string } not { errorMap: fn }; ZodError.issues not ZodError.errors
 - [Phase 03-01]: register_sale/register_redemption as SECURITY DEFINER PostgreSQL RPCs — only atomic write pattern available in PostgREST (no transaction API)
 - [Phase 03-01]: Seed card numbers updated from letter suffix (#0001-A) to Luhn numeric (#0001-9) — letter suffixes fail validateCardNumber() regex
+- [Phase 03-02]: getAuthenticatedManager accepts both owner and manager roles — owners need POS access for POC flexibility
+- [Phase 03-02]: Staff ID resolved from active_restaurant_staff view filtered by user_id — not assumed from JWT sub to match RPC expectation
+- [Phase 03-02]: lookupCustomer is pure read (zero write operations) — safe to call on card scan without side effects
+- [Phase 03-02]: registerSale delegates entirely to register_sale RPC — no sequential DB calls, atomicity guaranteed by PostgreSQL
+- [Phase 03-02]: SaleState includes rankPromoted and newRankName — surfaces RPC promotion data for Phase 4 wallet card color change without implementing display logic here
 
 ### Pending Todos
 
@@ -90,5 +96,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 03-01-PLAN.md — loyalty engine foundation (card number utility, register_sale/register_redemption RPCs, seed data update)
+Stopped at: Completed 03-02-PLAN.md — POS Server Actions (lookupCustomer, registerSale, dual-role auth, SaleState with rank promotion data)
 Resume file: None
