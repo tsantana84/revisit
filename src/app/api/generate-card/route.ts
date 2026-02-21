@@ -1,40 +1,14 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { jwtDecode } from 'jwt-decode'
+import { requireOwner } from '@/lib/auth'
 import OpenAI from 'openai'
 import { log } from '@/lib/logger'
 
-interface RevisitClaims {
-  restaurant_id?: string
-  app_role?: 'owner' | 'manager'
-  sub: string
-  exp: number
-}
-
 export async function POST(request: Request) {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
-
-  if (userError || !user) {
-    return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
-  }
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: 'Sessão inválida' }, { status: 401 })
-  }
-
-  const claims = jwtDecode<RevisitClaims>(session.access_token)
-
-  if (claims.app_role !== 'owner') {
-    return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
+  let owner
+  try {
+    owner = await requireOwner()
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 401 })
   }
 
   let body: { prompt?: string; primaryColor?: string; secondaryColor?: string }
@@ -62,7 +36,7 @@ export async function POST(request: Request) {
     'Wide landscape background image. Left side slightly darker. Premium aesthetic, high quality.',
   ].join('. ')
 
-  log.info('card_design.generation_started', { restaurant_id: claims.restaurant_id, user_id: user.id, prompt_length: prompt.length })
+  log.info('card_design.generation_started', { restaurant_id: owner.restaurantId, user_id: owner.userId, prompt_length: prompt.length })
   const startTime = Date.now()
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -81,14 +55,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nenhuma imagem gerada' }, { status: 500 })
     }
 
-    log.info('card_design.generation_completed', { restaurant_id: claims.restaurant_id, user_id: user.id, duration_ms: Date.now() - startTime })
+    log.info('card_design.generation_completed', { restaurant_id: owner.restaurantId, user_id: owner.userId, duration_ms: Date.now() - startTime })
     return NextResponse.json({ url })
   } catch (error) {
     const message =
       error instanceof OpenAI.APIError
         ? error.message
         : 'Erro ao gerar imagem'
-    log.error('card_design.generation_failed', { restaurant_id: claims.restaurant_id, error: message })
+    log.error('card_design.generation_failed', { restaurant_id: owner.restaurantId, error: message })
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

@@ -1,84 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { clerkClient } from '@clerk/nextjs/server'
+import { requireOwner } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/service'
-import { jwtDecode } from 'jwt-decode'
 import { z } from 'zod'
 import { log } from '@/lib/logger'
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface RevisitClaims {
-  restaurant_id?: string
-  app_role?: 'owner' | 'manager'
-  sub: string
-  exp: number
-}
 
 // ---------------------------------------------------------------------------
 // Schemas
 // ---------------------------------------------------------------------------
 
-const CreateManagerSchema = z.object({
+const InviteManagerSchema = z.object({
   email: z.string().email('Email inválido').trim(),
-  password: z.string().min(8, 'Senha deve ter pelo menos 8 caracteres'),
 })
 
 // ---------------------------------------------------------------------------
-// Auth helper — verify caller is an authenticated owner, return claims
-// ---------------------------------------------------------------------------
-
-async function verifyOwner(): Promise<
-  | { ok: true; claims: RevisitClaims & { restaurant_id: string } }
-  | { ok: false; status: number; message: string }
-> {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
-
-  if (userError || !user) {
-    return { ok: false, status: 401, message: 'Não autenticado' }
-  }
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return { ok: false, status: 401, message: 'Sessão não encontrada' }
-  }
-
-  const claims = jwtDecode<RevisitClaims>(session.access_token)
-
-  if (claims.app_role !== 'owner') {
-    return { ok: false, status: 403, message: 'Acesso negado: apenas proprietários podem realizar esta ação' }
-  }
-
-  if (!claims.restaurant_id) {
-    return { ok: false, status: 403, message: 'Restaurante não encontrado no token' }
-  }
-
-  return { ok: true, claims: claims as RevisitClaims & { restaurant_id: string } }
-}
-
-// ---------------------------------------------------------------------------
-// POST /api/staff — create manager account
+// POST /api/staff — invite a manager via Clerk Invitations
 // ---------------------------------------------------------------------------
 
 export async function POST(request: NextRequest) {
-  // 1. Verify caller is an authenticated owner
-  const auth = await verifyOwner()
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.message }, { status: auth.status })
+  let owner
+  try {
+    owner = await requireOwner()
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 401 })
   }
 
-  const { claims } = auth
-
-  // 2. Parse and validate request body
   let body: unknown
   try {
     body = await request.json()
@@ -86,7 +32,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Corpo da requisição inválido' }, { status: 400 })
   }
 
-  const validated = CreateManagerSchema.safeParse(body)
+  const validated = InviteManagerSchema.safeParse(body)
   if (!validated.success) {
     return NextResponse.json(
       { error: 'Dados inválidos', details: validated.error.flatten().fieldErrors },
@@ -94,47 +40,26 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { email, password } = validated.data
+  const { email } = validated.data
 
-  // 3. Create manager auth user via admin API
-  const serviceClient = createServiceClient()
+  try {
+    const clerk = await clerkClient()
+    await clerk.invitations.createInvitation({
+      emailAddress: email,
+      publicMetadata: {
+        restaurant_id: owner.restaurantId,
+        app_role: 'manager',
+      },
+      redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/signup`,
+    })
 
-  const { data: userData, error: createError } = await serviceClient.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true, // owner is setting password directly — skip email verification
-  })
-
-  if (createError || !userData.user) {
-    return NextResponse.json(
-      { error: createError?.message ?? 'Erro ao criar usuário' },
-      { status: 400 }
-    )
+    log.info('staff.invited', { restaurant_id: owner.restaurantId, user_id: owner.userId, invited_email: email })
+    return NextResponse.json({ success: true, email }, { status: 201 })
+  } catch (err) {
+    const message = (err as Error).message
+    log.error('staff.invitation_failed', { restaurant_id: owner.restaurantId, error: message })
+    return NextResponse.json({ error: message }, { status: 400 })
   }
-
-  const newUserId = userData.user.id
-
-  // 4. Insert restaurant_staff row atomically
-  const { error: staffError } = await serviceClient
-    .from('restaurant_staff')
-    .insert({ restaurant_id: claims.restaurant_id, user_id: newUserId, role: 'manager' })
-
-  if (staffError) {
-    // Cleanup orphaned auth user to maintain atomicity
-    await serviceClient.auth.admin.deleteUser(newUserId)
-    log.error('staff.creation_failed', { restaurant_id: claims.restaurant_id, error: staffError.message })
-    return NextResponse.json(
-      { error: 'Erro ao associar gerente ao restaurante' },
-      { status: 500 }
-    )
-  }
-
-  // 5. Return 201 with created manager info
-  log.info('staff.created', { restaurant_id: claims.restaurant_id, user_id: claims.sub, new_manager_email: email })
-  return NextResponse.json(
-    { success: true, manager: { id: newUserId, email } },
-    { status: 201 }
-  )
 }
 
 // ---------------------------------------------------------------------------
@@ -142,20 +67,19 @@ export async function POST(request: NextRequest) {
 // ---------------------------------------------------------------------------
 
 export async function GET() {
-  // Verify caller is an authenticated owner
-  const auth = await verifyOwner()
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.message }, { status: auth.status })
+  let owner
+  try {
+    owner = await requireOwner()
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 401 })
   }
-
-  const { claims } = auth
 
   const serviceClient = createServiceClient()
 
   const { data: staff, error } = await serviceClient
     .from('restaurant_staff')
     .select('id, user_id, role, created_at')
-    .eq('restaurant_id', claims.restaurant_id)
+    .eq('restaurant_id', owner.restaurantId)
     .eq('role', 'manager')
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
@@ -164,14 +88,19 @@ export async function GET() {
     return NextResponse.json({ error: 'Erro ao buscar gerentes' }, { status: 500 })
   }
 
-  // Enrich with emails from auth.users
+  // Enrich with emails from Clerk
+  const clerk = await clerkClient()
   const enriched = await Promise.all(
     (staff ?? []).map(async (s) => {
-      const { data } = await serviceClient.auth.admin.getUserById(s.user_id)
-      return { ...s, email: data?.user?.email ?? null }
+      try {
+        const user = await clerk.users.getUser(s.user_id)
+        return { ...s, email: user.emailAddresses[0]?.emailAddress ?? null }
+      } catch {
+        return { ...s, email: null }
+      }
     })
   )
 
-  log.info('staff.listed', { restaurant_id: claims.restaurant_id, user_id: claims.sub, count: enriched.length })
+  log.info('staff.listed', { restaurant_id: owner.restaurantId, user_id: owner.userId, count: enriched.length })
   return NextResponse.json({ staff: enriched })
 }
