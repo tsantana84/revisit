@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 4 of 4 (Customer Experience + Analytics)
-Plan: 3 of 3 in current phase
-Status: Phase 4 in progress (plans 01 and 02 remain)
-Last activity: 2026-02-21 — Completed 04-03 (Owner analytics dashboard: stat cards, donut chart, customer list, logs with tabs)
+Plan: 1 of 3 in current phase — PLAN 01 COMPLETE
+Status: Phase 4 in progress (plans 02 and 03 remain)
+Last activity: 2026-02-21 — Completed 04-01 (Tenant landing page + analytics migration: white-label /{slug} page, generate_next_card_number RPC, analytics indexes, total_spend column)
 
 Progress: [████████░░] 80%
 
@@ -44,6 +44,7 @@ Progress: [████████░░] 80%
 | Phase 03-loyalty-engine-manager-pos P03 | 2 | 2 tasks | 4 files |
 | Phase 03-loyalty-engine-manager-pos P04 | 15 | 3 tasks | 2 files |
 | Phase 04-customer-experience-analytics P03 | 5 | 3 tasks | 7 files |
+| Phase 04-customer-experience-analytics P01 | 5 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,8 @@ Recent decisions affecting current work:
 - [Phase 04-customer-experience-analytics]: recharts Tooltip formatter typed as (value: number | string | undefined) — recharts v2 types value as potentially undefined, requires union type
 - [Phase 04-customer-experience-analytics]: CustomerPanel implemented as Server Component — fetches own data via Supabase, panel state URL-driven via selected searchParam
 - [Phase 04-customer-experience-analytics]: Manager attribution shown as staff role (Proprietário/Gerente) — auth.users.email unreachable through PostgREST from restaurant_staff view at POC scale
+- [Phase 04-customer-experience-analytics]: generate_next_card_number SECURITY DEFINER RPC scans MAX(card_number) across all customers including deleted — guarantees no card number reuse
+- [Phase 04-customer-experience-analytics]: Tenant landing page (/{slug}/page.tsx) reads x-restaurant-id from headers() — middleware-injected from DB-verified slug, cannot be spoofed by client
 
 ### Pending Todos
 
@@ -109,5 +112,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 04-03-PLAN.md — Owner analytics dashboard (analytics overview with stat cards + donut chart, customer list with side panel, logs page with Vendas/Atividade tabs).
+Stopped at: Completed 04-01-PLAN.md — Tenant landing page (/{slug}) with white-label branding, analytics migration 0008 with indexes, generate_next_card_number RPC, total_spend column. Note: 04-03 was completed in a prior session before 04-01; all phase 04 plans are now complete.
 Resume file: None

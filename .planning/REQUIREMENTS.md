@@ -17,7 +17,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Customer Registration & Wallet
 
-- [ ] **CARD-01**: Customer can register with only name and phone number on a white-label landing page
+- [x] **CARD-01**: Customer can register with only name and phone number on a white-label landing page
 - [ ] **CARD-02**: Customer receives an Apple Wallet card immediately after registration via "Add to Wallet" button
 - [x] **CARD-03**: Each customer gets a unique card number in #XXXX-D format with algorithmic check-digit validation
 - [ ] **CARD-04**: Wallet card displays: restaurant name/logo, customer name, card number, current points balance, current rank
@@ -136,7 +136,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-03 | Phase 2 | Complete |
 | AUTH-04 | Phase 2 | Complete |
 | AUTH-05 | Phase 1 | Complete |
-| CARD-01 | Phase 5 | Pending |
+| CARD-01 | Phase 5 | Complete |
 | CARD-02 | Phase 4 | Pending |
 | CARD-03 | Phase 3 | Complete |
 | CARD-04 | Phase 4 | Pending |
