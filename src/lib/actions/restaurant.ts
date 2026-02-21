@@ -82,6 +82,7 @@ const RankSchema = z.object({
   name: z.string().min(1, 'Nome do nível é obrigatório').max(50),
   min_visits: z.number().int().min(0, 'Mínimo 0 visitas'),
   multiplier: z.number().min(0.1, 'Multiplicador deve ser positivo').max(10, 'Multiplicador máximo é 10'),
+  discount_pct: z.number().min(0, 'Mínimo 0%').max(100, 'Máximo 100%').default(0),
 })
 
 const RanksSchema = z.array(RankSchema).min(1, 'Deve ter pelo menos um nível')
@@ -301,6 +302,7 @@ export async function updateRanks(
     name: rank.name,
     min_visits: rank.min_visits,
     multiplier: rank.multiplier,
+    discount_pct: rank.discount_pct,
     sort_order: index,
   }))
 

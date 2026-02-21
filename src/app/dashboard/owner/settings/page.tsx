@@ -27,6 +27,7 @@ interface Rank {
   name: string
   min_visits: number
   multiplier: number
+  discount_pct: number
   sort_order: number
 }
 
@@ -73,7 +74,7 @@ export default async function SettingsPage() {
   }
 
   const defaultRanks: Rank[] = [
-    { id: '', name: 'Bronze', min_visits: 0, multiplier: 1, sort_order: 0 },
+    { id: '', name: 'Bronze', min_visits: 0, multiplier: 1, discount_pct: 0, sort_order: 0 },
   ]
 
   const restaurantData = restaurant ?? defaultRestaurant

@@ -8,6 +8,7 @@ interface Rank {
   name: string
   min_visits: number
   multiplier: number
+  discount_pct: number
   sort_order: number
 }
 
@@ -20,6 +21,7 @@ interface RankRow {
   name: string
   min_visits: number
   multiplier: number
+  discount_pct: number
 }
 
 const inputStyle: React.CSSProperties = {
@@ -45,8 +47,9 @@ export function RanksForm({ ranks }: RanksFormProps) {
           name: r.name,
           min_visits: r.min_visits,
           multiplier: r.multiplier,
+          discount_pct: r.discount_pct ?? 0,
         }))
-      : [{ id: makeTempId(), name: 'Bronze', min_visits: 0, multiplier: 1 }]
+      : [{ id: makeTempId(), name: 'Bronze', min_visits: 0, multiplier: 1, discount_pct: 0 }]
   )
 
   const [state, action, pending] = useActionState<RanksState, FormData>(
@@ -57,7 +60,7 @@ export function RanksForm({ ranks }: RanksFormProps) {
   function addRank() {
     setRows((prev) => [
       ...prev,
-      { id: makeTempId(), name: '', min_visits: 0, multiplier: 1 },
+      { id: makeTempId(), name: '', min_visits: 0, multiplier: 1, discount_pct: 0 },
     ])
   }
 
@@ -106,7 +109,7 @@ export function RanksForm({ ranks }: RanksFormProps) {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 140px 140px 80px',
+            gridTemplateColumns: '1fr 140px 140px 120px 80px',
             gap: '0.5rem',
             marginBottom: '0.5rem',
           }}
@@ -120,6 +123,9 @@ export function RanksForm({ ranks }: RanksFormProps) {
           <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#6b7280' }}>
             Multiplicador
           </span>
+          <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#6b7280' }}>
+            Desconto (%)
+          </span>
           <span />
         </div>
 
@@ -128,7 +134,7 @@ export function RanksForm({ ranks }: RanksFormProps) {
             key={row.id}
             style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 140px 140px 80px',
+              gridTemplateColumns: '1fr 140px 140px 120px 80px',
               gap: '0.5rem',
               marginBottom: '0.5rem',
               alignItems: 'center',
@@ -160,6 +166,18 @@ export function RanksForm({ ranks }: RanksFormProps) {
               step={0.1}
               style={inputStyle}
               aria-label="Multiplicador"
+            />
+            <input
+              type="number"
+              value={row.discount_pct}
+              onChange={(e) =>
+                updateRow(row.id, 'discount_pct', parseFloat(e.target.value) || 0)
+              }
+              min={0}
+              max={100}
+              step={0.1}
+              style={inputStyle}
+              aria-label="Desconto (%)"
             />
             <button
               type="button"
