@@ -1,19 +1,12 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
-import { jwtDecode } from 'jwt-decode'
+import { requireManager } from '@/lib/auth'
+import { createClerkSupabaseClient } from '@/lib/supabase/server'
 import { log } from '@/lib/logger'
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-interface RevisitClaims {
-  restaurant_id?: string
-  app_role?: 'owner' | 'manager'
-  sub: string
-  exp: number
-}
 
 export type RewardInfo =
   | { type: 'cashback'; availableCredit: number; pointsBalance: number; earnRate: number }
@@ -41,43 +34,20 @@ async function getAuthenticatedManager(): Promise<
   | {
       userId: string
       restaurantId: string
-      supabase: Awaited<ReturnType<typeof createClient>>
+      supabase: Awaited<ReturnType<typeof createClerkSupabaseClient>>
     }
   | { error: string }
 > {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
-
-  if (userError || !user) {
-    return { error: 'Não autenticado' }
-  }
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return { error: 'Sessão inválida' }
-  }
-
-  const claims = jwtDecode<RevisitClaims>(session.access_token)
-
-  if (claims.app_role !== 'manager' && claims.app_role !== 'owner') {
-    return { error: 'Acesso negado' }
-  }
-
-  if (!claims.restaurant_id) {
-    return { error: 'Restaurante não encontrado no token' }
-  }
-
-  return {
-    userId: user.id,
-    restaurantId: claims.restaurant_id,
-    supabase,
+  try {
+    const ctx = await requireManager()
+    const supabase = await createClerkSupabaseClient()
+    return {
+      userId: ctx.userId,
+      restaurantId: ctx.restaurantId,
+      supabase,
+    }
+  } catch (err) {
+    return { error: (err as Error).message }
   }
 }
 
@@ -89,7 +59,7 @@ export async function checkRewardAvailability(
   cardNumber: string,
   restaurantId: string
 ): Promise<RewardInfo> {
-  const supabase = await createClient()
+  const supabase = await createClerkSupabaseClient()
 
   // 1. Get restaurant reward_type and earn_rate
   const { data: restaurant, error: restError } = await supabase

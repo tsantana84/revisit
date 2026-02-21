@@ -1,21 +1,14 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
-import { jwtDecode } from 'jwt-decode'
+import { requireOwner } from '@/lib/auth'
+import { createClerkSupabaseClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { log } from '@/lib/logger'
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-interface RevisitClaims {
-  restaurant_id?: string
-  app_role?: 'owner' | 'manager'
-  sub: string
-  exp: number
-}
 
 export type BrandingState =
   | {
@@ -101,41 +94,18 @@ const RanksSchema = z.array(RankSchema).min(1, 'Deve ter pelo menos um nível')
 // ---------------------------------------------------------------------------
 
 async function getAuthenticatedOwner(): Promise<
-  { userId: string; restaurantId: string; supabase: Awaited<ReturnType<typeof createClient>> } | { error: string }
+  { userId: string; restaurantId: string; supabase: Awaited<ReturnType<typeof createClerkSupabaseClient>> } | { error: string }
 > {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
-
-  if (userError || !user) {
-    return { error: 'Não autenticado' }
-  }
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return { error: 'Sessão inválida' }
-  }
-
-  const claims = jwtDecode<RevisitClaims>(session.access_token)
-
-  if (claims.app_role !== 'owner') {
-    return { error: 'Acesso negado: apenas proprietários podem alterar configurações' }
-  }
-
-  if (!claims.restaurant_id) {
-    return { error: 'Restaurante não encontrado no token' }
-  }
-
-  return {
-    userId: user.id,
-    restaurantId: claims.restaurant_id,
-    supabase,
+  try {
+    const ctx = await requireOwner()
+    const supabase = await createClerkSupabaseClient()
+    return {
+      userId: ctx.userId,
+      restaurantId: ctx.restaurantId,
+      supabase,
+    }
+  } catch (err) {
+    return { error: (err as Error).message }
   }
 }
 

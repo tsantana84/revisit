@@ -1,7 +1,7 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
-import { jwtDecode } from 'jwt-decode'
+import { requireManager } from '@/lib/auth'
+import { createClerkSupabaseClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { validateCardNumber } from '@/lib/utils/card-number'
 import { log } from '@/lib/logger'
@@ -9,13 +9,6 @@ import { log } from '@/lib/logger'
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-interface RevisitClaims {
-  restaurant_id?: string
-  app_role?: 'owner' | 'manager'
-  sub: string
-  exp: number
-}
 
 export type LookupState =
   | {
@@ -49,59 +42,36 @@ export type SaleState =
 
 async function getAuthenticatedManager(): Promise<
   | {
-      supabase: Awaited<ReturnType<typeof createClient>>
+      supabase: Awaited<ReturnType<typeof createClerkSupabaseClient>>
       restaurantId: string
       staffId: string
       userId: string
     }
   | { error: string }
 > {
-  const supabase = await createClient()
+  try {
+    const ctx = await requireManager()
+    const supabase = await createClerkSupabaseClient()
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
+    // Resolve staff ID from restaurant_staff table
+    const { data: staffRow, error: staffError } = await supabase
+      .from('active_restaurant_staff')
+      .select('id')
+      .eq('user_id', ctx.userId)
+      .single()
 
-  if (userError || !user) {
-    return { error: 'Não autenticado' }
-  }
+    if (staffError || !staffRow) {
+      return { error: 'Funcionário não encontrado. Entre em contato com o proprietário.' }
+    }
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return { error: 'Sessão inválida' }
-  }
-
-  const claims = jwtDecode<RevisitClaims>(session.access_token)
-
-  // Accept both manager and owner roles (owners can use POS for POC flexibility)
-  if (claims.app_role !== 'manager' && claims.app_role !== 'owner') {
-    return { error: 'Acesso negado: apenas gerentes e proprietários podem usar o PDV' }
-  }
-
-  if (!claims.restaurant_id) {
-    return { error: 'Restaurante não encontrado no token' }
-  }
-
-  // Resolve staff ID from restaurant_staff table (not assumed from JWT sub)
-  const { data: staffRow, error: staffError } = await supabase
-    .from('active_restaurant_staff')
-    .select('id')
-    .eq('user_id', user.id)
-    .single()
-
-  if (staffError || !staffRow) {
-    return { error: 'Funcionário não encontrado. Entre em contato com o proprietário.' }
-  }
-
-  return {
-    supabase,
-    restaurantId: claims.restaurant_id,
-    staffId: staffRow.id,
-    userId: user.id,
+    return {
+      supabase,
+      restaurantId: ctx.restaurantId,
+      staffId: staffRow.id,
+      userId: ctx.userId,
+    }
+  } catch (err) {
+    return { error: (err as Error).message }
   }
 }
 
