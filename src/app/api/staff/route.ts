@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { jwtDecode } from 'jwt-decode'
 import { z } from 'zod'
+import { log } from '@/lib/logger'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -121,6 +122,7 @@ export async function POST(request: NextRequest) {
   if (staffError) {
     // Cleanup orphaned auth user to maintain atomicity
     await serviceClient.auth.admin.deleteUser(newUserId)
+    log.error('staff.creation_failed', { restaurant_id: claims.restaurant_id, error: staffError.message })
     return NextResponse.json(
       { error: 'Erro ao associar gerente ao restaurante' },
       { status: 500 }
@@ -128,6 +130,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 5. Return 201 with created manager info
+  log.info('staff.created', { restaurant_id: claims.restaurant_id, user_id: claims.sub, new_manager_email: email })
   return NextResponse.json(
     { success: true, manager: { id: newUserId, email } },
     { status: 201 }
@@ -169,5 +172,6 @@ export async function GET() {
     })
   )
 
+  log.info('staff.listed', { restaurant_id: claims.restaurant_id, user_id: claims.sub, count: enriched.length })
   return NextResponse.json({ staff: enriched })
 }

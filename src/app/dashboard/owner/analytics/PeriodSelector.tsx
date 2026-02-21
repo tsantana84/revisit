@@ -5,6 +5,7 @@ import { useTransition } from 'react'
 
 interface PeriodSelectorProps {
   current: string
+  basePath?: string
 }
 
 const PERIODS = [
@@ -14,13 +15,13 @@ const PERIODS = [
   { value: 'all', label: 'Todos' },
 ]
 
-export default function PeriodSelector({ current }: PeriodSelectorProps) {
+export default function PeriodSelector({ current, basePath = '/dashboard/owner/analytics' }: PeriodSelectorProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
   const handleClick = (value: string) => {
     startTransition(() => {
-      router.push(`/dashboard/owner/analytics?period=${value}`)
+      router.push(`${basePath}?period=${value}`)
     })
   }
 

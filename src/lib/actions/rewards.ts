@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { jwtDecode } from 'jwt-decode'
+import { log } from '@/lib/logger'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -121,6 +122,7 @@ export async function checkRewardAvailability(
   // 3. Branch on reward_type
   if (rewardType === 'cashback') {
     const availableCredit = Math.floor(pointsBalance / earnRate)
+    log.info('reward.checked', { card_number: cardNumber, restaurant_id: restaurantId, reward_type: 'cashback', points_balance: pointsBalance })
     return { type: 'cashback', availableCredit, pointsBalance, earnRate }
   }
 
@@ -198,6 +200,7 @@ export async function registerRedemption(
     return { step: 'error', message: 'Dados de resgate ausentes' }
   }
 
+  const startTime = Date.now()
   const auth = await getAuthenticatedManager()
   if ('error' in auth) {
     return { step: 'error', message: auth.error }
@@ -232,9 +235,11 @@ export async function registerRedemption(
       const msg = result.error
         ? (errorMessages[result.error] ?? result.error)
         : 'Erro ao registrar resgate'
+      log.error('redemption.failed', { card_number: cardNumber, restaurant_id: restaurantId, error: result.error ?? 'unknown' })
       return { step: 'error', message: msg }
     }
 
+    log.info('redemption.registered', { card_number: cardNumber, restaurant_id: restaurantId, reward_type: rewardType, points_spent: result.new_balance != null ? 0 : 0, new_balance: result.new_balance ?? 0, duration_ms: Date.now() - startTime })
     return {
       step: 'success',
       message: 'Resgate registrado com sucesso',
@@ -303,6 +308,7 @@ export async function registerRedemption(
       return { step: 'error', message: `Erro ao registrar transação: ${txError.message}` }
     }
 
+    log.info('redemption.registered', { card_number: cardNumber, restaurant_id: restaurantId, reward_type: 'progressive_discount', points_spent: 0, new_balance: pointsBalance, duration_ms: Date.now() - startTime })
     return {
       step: 'success',
       message: 'Desconto aplicado e registrado com sucesso',

@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import slugify from 'slugify'
 import { jwtDecode } from 'jwt-decode'
+import { log } from '@/lib/logger'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -75,6 +76,7 @@ export async function signup(
   })
 
   if (authError || !authData.user) {
+    log.error('auth.signup_failed', { email, error: authError?.message ?? 'user_creation_failed' })
     return { message: authError?.message ?? 'Erro ao criar conta' }
   }
 
@@ -123,17 +125,20 @@ export async function signup(
       }
 
       // Force fresh login so JWT hook picks up the new restaurant_staff row
+      log.info('auth.signup_completed', { user_id: userId, restaurant_id: restaurantRetry.id, slug })
       await supabase.auth.signOut()
       redirect('/login?signup=success')
     }
 
     // Non-collision error
     await serviceClient.auth.admin.deleteUser(userId)
+    log.error('auth.signup_failed', { email, error: restaurantError.message })
     return { message: 'Erro ao criar restaurante. Tente novamente.' }
   }
 
   if (!restaurant) {
     await serviceClient.auth.admin.deleteUser(userId)
+    log.error('auth.signup_failed', { email, error: 'restaurant_insert_null' })
     return { message: 'Erro ao criar restaurante. Tente novamente.' }
   }
 
@@ -145,12 +150,14 @@ export async function signup(
     // Clean up orphaned restaurant and auth user
     await serviceClient.from('restaurants').delete().eq('id', restaurant.id)
     await serviceClient.auth.admin.deleteUser(userId)
+    log.error('auth.signup_failed', { email, error: staffError.message })
     return { message: 'Erro ao configurar acesso. Tente novamente.' }
   }
 
   // 4. Force session refresh so the JWT hook picks up the new restaurant_staff row.
   // signUp() issues a JWT before restaurant_staff exists — the hook gets null claims.
   // signOut + redirect to login ensures a fresh login issues the correct JWT.
+  log.info('auth.signup_completed', { user_id: userId, restaurant_id: restaurant.id, slug })
   await supabase.auth.signOut()
   // Do NOT wrap redirect() in try/catch — Next.js throws a special NEXT_REDIRECT error
   redirect('/login?signup=success')
@@ -162,7 +169,7 @@ export async function signup(
 
 interface RevisitClaims {
   restaurant_id?: string
-  app_role?: 'owner' | 'manager'
+  app_role?: 'owner' | 'manager' | 'admin'
   sub: string
   exp: number
 }
@@ -186,6 +193,7 @@ export async function login(
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
+    log.error('auth.login_failed', { email, error: 'invalid_credentials' })
     return { message: 'Email ou senha inválidos' }
   }
 
@@ -202,10 +210,14 @@ export async function login(
   const claims = jwtDecode<RevisitClaims>(session.access_token)
   const role = claims.app_role
 
+  log.info('auth.login_completed', { user_id: claims.sub, app_role: role, restaurant_id: claims.restaurant_id })
+
   if (role === 'owner') {
     redirect('/dashboard/owner')
   } else if (role === 'manager') {
     redirect('/dashboard/manager')
+  } else if (role === 'admin') {
+    redirect('/dashboard/admin')
   } else {
     // User exists in auth but has no restaurant_staff row — orphaned account
     await supabase.auth.signOut()
@@ -219,6 +231,8 @@ export async function login(
 
 export async function logout() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  log.info('auth.logout', { user_id: user?.id })
   await supabase.auth.signOut()
   redirect('/login')
 }

@@ -1,0 +1,1124 @@
+================================================================================
+REVISIT PLATFORM — COMPLETE SYSTEM FLOWS
+================================================================================
+
+This document describes every user-facing and internal flow in the Revisit
+platform. Each section details the actors, steps, decision points, data flow,
+and structured log events emitted. Use this as input for generating visual
+diagrams (sequence diagrams, flowcharts, swimlane diagrams, etc.).
+
+Terminology used throughout:
+  - "Anon client"    = Supabase client using the public anon key (respects RLS)
+  - "User client"    = Supabase SSR client with the user's session cookies (respects RLS)
+  - "Service client"  = Supabase client using the service role key (bypasses RLS entirely)
+  - "JWT hook"       = PostgreSQL function `custom_access_token_hook` that injects
+                       custom claims (app_role, restaurant_id) into every JWT at issue time
+  - "RLS"            = Row-Level Security — Postgres enforces tenant isolation at the DB layer
+
+Three user roles exist:
+  - owner   — Restaurant owner. Has restaurant_id in JWT. Full control over their restaurant.
+  - manager — Restaurant staff. Has restaurant_id in JWT. POS + reward operations only.
+  - admin   — Platform super-admin. Has NO restaurant_id in JWT. Cross-tenant read access.
+
+
+================================================================================
+FLOW 0: STRUCTURED LOGGING ARCHITECTURE
+================================================================================
+
+Source file: src/lib/logger.ts
+
+Every log event in the system follows the same shape:
+
+  {
+    "event":         "sale.registered",       // dot-separated event name
+    "level":         "info",                  // info | warn | error
+    "timestamp":     "2026-02-21T14:30:00Z",  // ISO-8601
+    "restaurant_id": "uuid",                  // optional — which tenant
+    "user_id":       "uuid",                  // optional — who did it
+    "duration_ms":   42,                      // optional — how long it took
+    "error":         "some_error",            // optional — only on warn/error
+    ...extra fields                           // varies per event
+  }
+
+Output targets:
+  - stdout (console.log) for info events
+  - stderr (console.warn) for warn events
+  - stderr (console.error) for error events
+
+These JSON lines are parseable by any log aggregator (Vercel, Datadog, Sentry,
+Grafana Loki, AWS CloudWatch, etc.) without additional configuration.
+
+
+================================================================================
+FLOW 1: MIDDLEWARE — EVERY REQUEST
+================================================================================
+
+Source file: src/lib/supabase/middleware.ts
+Trigger: Every HTTP request to the Next.js application
+Actors: Browser, Next.js Middleware, Supabase Auth, Supabase DB
+
+Step-by-step:
+
+  1. REQUEST RECEIVED
+     - Record start time
+     - LOG: middleware.request { pathname, method }
+
+  2. AUTH TOKEN REFRESH
+     - Create Supabase SSR client with cookie forwarding
+     - Call supabase.auth.getUser() — this refreshes the session cookie
+       (uses server-side JWT verification, not just client-side decode)
+     - Updated cookies are written to both the request and response objects
+
+  3. ROUTE CLASSIFICATION
+     The middleware classifies the request pathname into one of:
+
+     A) DASHBOARD ROUTE (pathname starts with /dashboard)
+        → Go to Step 4 (Dashboard Protection)
+
+     B) TENANT ROUTE (pathname matches /{slug}/...)
+        - NOT: /dashboard, /login, /signup, /api, /_next, /not-found
+        - NOT: static file extensions (.svg, .png, .jpg, etc.)
+        - NOT: root path /
+        → Go to Step 5 (Slug Resolution)
+
+     C) OTHER ROUTE (static pages, login, signup, API, etc.)
+        → Go to Step 6 (Pass Through)
+
+  4. DASHBOARD ROUTE PROTECTION
+     - Call supabase.auth.getSession()
+     - If no session → Redirect to /login
+     - Decode JWT claims: { app_role, restaurant_id, sub }
+
+     4a. BARE /dashboard or /dashboard/
+         Decision tree based on app_role:
+           owner   → Redirect to /dashboard/owner
+           manager → Redirect to /dashboard/manager
+           admin   → Redirect to /dashboard/admin
+           none    → Redirect to /login
+         LOG: middleware.auth_redirect { user_id, role, destination }
+
+     4b. /dashboard/owner/* — if role !== 'owner'
+         → Redirect to /login
+         LOG (warn): middleware.auth_redirect { user_id, role, destination: /login, reason: not_owner }
+
+     4c. /dashboard/manager/* — if role !== 'manager'
+         → Redirect to /login
+         LOG (warn): middleware.auth_redirect { user_id, role, destination: /login, reason: not_manager }
+
+     4d. /dashboard/admin/* — if role !== 'admin'
+         → Redirect to /login
+         LOG (warn): middleware.auth_redirect { user_id, role, destination: /login, reason: not_admin }
+
+  5. SLUG RESOLUTION (Tenant Routes)
+     - Extract slug from pathname: /{slug}/...
+
+     5a. CHECK IN-MEMORY CACHE
+         - Cache is a module-level Map<string, { restaurantId, name, cachedAt }>
+         - TTL: 5 minutes (300,000ms)
+         - If cache hit AND not stale:
+             → Inject headers: x-restaurant-id, x-restaurant-name
+             LOG: middleware.slug_resolved { slug, restaurant_id, cache_hit: true }
+             LOG: middleware.completed { pathname, duration_ms }
+             → Return response
+
+     5b. CACHE MISS (or stale)
+         - Create service-role client (bypasses RLS)
+         - Query: SELECT id, name FROM restaurants WHERE slug = ? AND deleted_at IS NULL
+         - If not found → Rewrite to /not-found page
+         - If found:
+             → Store in cache: { restaurantId, name, cachedAt: now }
+             → Inject headers: x-restaurant-id, x-restaurant-name
+             LOG: middleware.slug_resolved { slug, restaurant_id, cache_hit: false }
+
+  6. PASS THROUGH
+     LOG: middleware.completed { pathname, duration_ms }
+     → Return response with any updated auth cookies
+
+
+================================================================================
+FLOW 2: SIGNUP — NEW RESTAURANT OWNER
+================================================================================
+
+Source file: src/lib/actions/auth.ts → signup()
+Trigger: User submits signup form with restaurantName, email, password
+Actors: Browser, Server Action, Supabase Auth, Supabase DB
+Form binding: React useActionState
+
+Step-by-step:
+
+  1. VALIDATION
+     - Zod schema: restaurantName (min 2 chars), email (valid format), password (min 8 chars)
+     - If invalid → Return { errors: fieldErrors }
+
+  2. CREATE AUTH USER
+     - Uses anon Supabase client (signUp creates + signs in)
+     - supabase.auth.signUp({ email, password })
+     - If error:
+         LOG (error): auth.signup_failed { email, error }
+         → Return { message: error }
+
+  3. CREATE RESTAURANT (service role, bypasses RLS)
+     - Generate slug from restaurant name using slugify (lowercase, strict)
+     - INSERT INTO restaurants (name, slug, program_name)
+
+     3a. SLUG COLLISION (Postgres error 23505)
+         - Append random 4-char suffix: slug → slug-{xxxx}
+         - Retry INSERT once
+         - If retry fails → Delete orphan auth user → Return error
+
+     3b. INSERT STAFF ROW
+         - INSERT INTO restaurant_staff (restaurant_id, user_id, role: 'owner')
+         - If fails → Delete restaurant + auth user (atomicity cleanup)
+
+  4. FORCE SESSION REFRESH
+     - The JWT was issued BEFORE restaurant_staff existed
+     - So the JWT hook returned null claims
+     - Sign out the user, redirect to /login?signup=success
+     - Next login will issue a JWT with correct claims
+     LOG: auth.signup_completed { user_id, restaurant_id, slug }
+     → Redirect to /login?signup=success
+
+  Error cleanup pattern:
+     auth user created → restaurant fails → delete auth user
+     restaurant created → staff fails → delete restaurant + auth user
+     This ensures no orphaned records.
+
+
+================================================================================
+FLOW 3: LOGIN — ALL ROLES
+================================================================================
+
+Source file: src/lib/actions/auth.ts → login()
+Trigger: User submits login form with email, password
+Actors: Browser, Server Action, Supabase Auth
+Form binding: React useActionState
+
+Step-by-step:
+
+  1. VALIDATION
+     - Zod schema: email (valid), password (non-empty)
+     - If invalid → Return { message: first error }
+
+  2. AUTHENTICATE
+     - supabase.auth.signInWithPassword({ email, password })
+     - If error:
+         LOG (error): auth.login_failed { email, error: invalid_credentials }
+         → Return { message: 'Email ou senha inválidos' }
+
+  3. READ JWT CLAIMS
+     - supabase.auth.getSession() → decode access_token
+     - Extract: app_role, restaurant_id, sub
+     LOG: auth.login_completed { user_id, app_role, restaurant_id }
+
+  4. ROLE-BASED REDIRECT
+     Decision tree:
+       owner   → Redirect to /dashboard/owner
+       manager → Redirect to /dashboard/manager
+       admin   → Redirect to /dashboard/admin
+       none    → Sign out + Return { message: 'Conta não associada a nenhum restaurante' }
+
+
+================================================================================
+FLOW 4: LOGOUT
+================================================================================
+
+Source file: src/lib/actions/auth.ts → logout()
+Trigger: User clicks "Sair" button in dashboard sidebar
+Actors: Browser, Server Action, Supabase Auth
+
+Step-by-step:
+
+  1. Get current user via supabase.auth.getUser()
+  2. LOG: auth.logout { user_id }
+  3. supabase.auth.signOut()
+  4. Redirect to /login
+
+
+================================================================================
+FLOW 5: JWT HOOK — CLAIM INJECTION AT TOKEN ISSUE TIME
+================================================================================
+
+Source file: supabase/migrations/0010_admin_role.sql (updated hook)
+Trigger: Every time Supabase Auth issues or refreshes a JWT
+Actors: Supabase Auth, PostgreSQL function
+
+This is a PostgreSQL function that runs BEFORE every JWT is returned to the client.
+
+Step-by-step:
+
+  1. INPUT: event JSONB containing { user_id, claims, ... }
+
+  2. LOOKUP STAFF ROW
+     SELECT restaurant_id, role FROM restaurant_staff
+     WHERE user_id = event.user_id AND deleted_at IS NULL
+     LIMIT 1
+
+  3. INJECT CLAIMS (decision tree):
+
+     If v_role IS NOT NULL (user has a staff row):
+       → Always inject: claims.app_role = v_role
+       If v_restaurant_id IS NOT NULL (owner or manager):
+         → Also inject: claims.restaurant_id = v_restaurant_id
+       If v_restaurant_id IS NULL (admin):
+         → Do NOT inject restaurant_id (admin has no tenant)
+
+     If v_role IS NULL (orphaned auth user, no staff row):
+       → Do not inject any custom claims
+       → Login flow will detect this and show "Conta não associada"
+
+  4. RETURN modified event with updated claims
+
+  Key change from previous version:
+    BEFORE: IF v_restaurant_id IS NOT NULL THEN inject both
+    AFTER:  IF v_role IS NOT NULL THEN inject role; conditionally inject restaurant_id
+    This allows admin users (null restaurant_id) to still get their app_role in the JWT.
+
+
+================================================================================
+FLOW 6: CUSTOMER REGISTRATION (Public Tenant Page)
+================================================================================
+
+Source file: src/lib/actions/customer.ts → registerCustomer()
+Trigger: Visitor fills registration form on /{slug} page (name + phone)
+Actors: Visitor (unauthenticated), Server Action, Service Client, Supabase DB
+
+The restaurant_id comes from the middleware-injected x-restaurant-id header
+(set during slug resolution in Flow 1). It cannot be spoofed by the client.
+
+Step-by-step:
+
+  1. READ RESTAURANT ID
+     - headers().get('x-restaurant-id')
+     - If missing → Return error
+
+  2. EXTRACT AND CLEAN FIELDS
+     - name: trim whitespace
+     - phone: strip all non-digits
+
+  3. VALIDATE
+     - Zod: name (2-100 chars), phone (10-11 digits)
+     - If invalid → Return { fieldErrors }
+
+  4. START TIMER
+     LOG: customer.registration_started { restaurant_id, phone: last 4 digits }
+
+  5. CHECK FOR EXISTING CUSTOMER (idempotent behavior)
+     - SELECT FROM customers WHERE restaurant_id = ? AND phone = ? AND deleted_at IS NULL
+     - If found:
+         → Fetch rank name from ranks table
+         LOG: customer.registration_completed { restaurant_id, card_number, is_existing: true, duration_ms }
+         → Return { success, cardNumber, customerName, rankName, isExisting: true }
+
+  6. GENERATE CARD NUMBER
+     - RPC: generate_next_card_number(p_restaurant_id)
+     - This is an atomic counter — no race conditions
+     - If fails:
+         LOG (error): customer.registration_failed { restaurant_id, error }
+         → Return error
+
+  7. GET BRONZE RANK
+     - SELECT FROM ranks WHERE restaurant_id = ? AND deleted_at IS NULL ORDER BY sort_order ASC LIMIT 1
+     - The lowest sort_order rank is the "starter" rank (typically Bronze)
+
+  8. INSERT CUSTOMER
+     - INSERT INTO customers (restaurant_id, name, phone, card_number, points_balance: 0,
+       visit_count: 0, total_spend: 0, current_rank_id: bronzeRank.id)
+
+  9. HANDLE RACE CONDITION
+     - If unique violation (error 23505) — another request registered the same phone:
+         → Fetch the existing customer, return their card (idempotent)
+     - If other error:
+         LOG (error): customer.registration_failed { restaurant_id, error }
+         → Return error
+
+  10. SUCCESS
+      LOG: customer.registration_completed { restaurant_id, card_number, is_existing: false, duration_ms }
+      → Return { success, cardNumber, customerName, rankName, isExisting: false }
+
+
+================================================================================
+FLOW 7: POS LOOKUP — PREVIEW BEFORE SALE
+================================================================================
+
+Source file: src/lib/actions/pos.ts → lookupCustomer()
+Trigger: Manager/owner enters card number + amount in POS interface
+Actors: Manager/Owner, Server Action, User Client, Supabase DB
+Form binding: React useActionState
+
+Step-by-step:
+
+  1. EXTRACT INPUTS
+     - card_number: trimmed
+     - amount: raw string from form
+
+  2. VALIDATE CARD FORMAT
+     - Uses validateCardNumber() utility
+     - If invalid → Return error
+
+  3. VALIDATE AMOUNT
+     - Parse float, check range: R$0.01 to R$99,999.99
+     - If invalid → Return error
+
+  4. AUTHENTICATE MANAGER
+     - getAuthenticatedManager() helper:
+       a. supabase.auth.getUser() — verify user exists
+       b. supabase.auth.getSession() → decode JWT
+       c. Check: app_role must be 'manager' OR 'owner'
+       d. Check: restaurant_id must exist in JWT
+       e. Look up staff ID: SELECT id FROM active_restaurant_staff WHERE user_id = ?
+     - If any check fails → Return error
+
+  5. CONVERT AMOUNT
+     - amountCents = Math.round(amountFloat * 100)
+
+  6. LOOK UP CUSTOMER
+     - SELECT FROM active_customers WHERE restaurant_id = ? AND card_number = ?
+     - If not found → Return error 'Cartão não encontrado'
+
+  7. GET RANK DETAILS
+     - If customer has current_rank_id:
+         SELECT name, multiplier FROM active_ranks WHERE id = ?
+     - Default multiplier: 1, default rank name: 'Sem nível'
+
+  8. GET EARN RATE
+     - SELECT earn_rate FROM active_restaurants WHERE id = restaurant_id
+     - Default: 1
+
+  9. CALCULATE POINTS PREVIEW
+     - Formula: pointsPreview = round((amountCents / 100) * earnRate * multiplier)
+     - This is the number of points the customer WOULD earn
+
+  10. LOG AND RETURN PREVIEW
+      LOG: pos.lookup { card_number, restaurant_id, staff_id, points_preview }
+      → Return { step: 'preview', customerName, currentRank, pointsBalance, pointsPreview,
+                 cardNumber, amountCents, staffId }
+
+
+================================================================================
+FLOW 8: REGISTER SALE — COMMIT TRANSACTION
+================================================================================
+
+Source file: src/lib/actions/pos.ts → registerSale()
+Trigger: Manager/owner confirms sale after preview (Flow 7)
+Actors: Manager/Owner, Server Action, User Client, Supabase DB (RPC)
+Form binding: React useActionState (hidden fields from preview state)
+
+Step-by-step:
+
+  1. EXTRACT HIDDEN FIELDS
+     - card_number, amount_cents, staff_id (populated from preview)
+
+  2. VALIDATE WITH ZOD
+     - card_number: valid format
+     - amount_cents: integer >= 1
+     - staff_id: valid UUID
+
+  3. START TIMER
+
+  4. AUTHENTICATE MANAGER
+     - Same getAuthenticatedManager() as Flow 7
+
+  5. CALL register_sale RPC (ATOMIC)
+     - supabase.rpc('register_sale', { p_card_number, p_amount_cents, p_staff_id })
+     - This PostgreSQL function does ALL of the following atomically:
+       a. Validates the card number
+       b. Looks up the customer
+       c. Calculates points earned (using earn_rate * rank multiplier)
+       d. Inserts a sale row
+       e. Inserts a point_transaction row (type: 'earn')
+       f. Updates customer: points_balance, visit_count, total_spend
+       g. Checks for rank promotion (visit_count >= next rank's min_visits)
+       h. Returns: points_earned, new_balance, customer_name, rank_promoted, new_rank_name
+
+  6. HANDLE ERRORS
+     - PostgREST-level error:
+         LOG (error): sale.failed { card_number, restaurant_id, error }
+         → Return error
+     - Application-level error (from RPC):
+         LOG (error): sale.failed { card_number, restaurant_id, error: data.error }
+         → Return mapped error message
+
+  7. SUCCESS
+     LOG: sale.registered { card_number, restaurant_id, staff_id, amount_cents,
+                            points_earned, rank_promoted, duration_ms }
+     → Return { step: 'success', pointsEarned, newBalance, customerName,
+                rankPromoted, newRankName }
+
+
+================================================================================
+FLOW 9: CHECK REWARD AVAILABILITY
+================================================================================
+
+Source file: src/lib/actions/rewards.ts → checkRewardAvailability()
+Trigger: Called after sale to show available rewards in POS
+Actors: Manager/Owner, Server Action, User Client, Supabase DB
+
+The reward system supports three types. This function branches on the
+restaurant's configured reward_type.
+
+Step-by-step:
+
+  1. FETCH RESTAURANT CONFIG
+     - SELECT reward_type, earn_rate FROM active_restaurants WHERE id = ?
+
+  2. FETCH CUSTOMER
+     - SELECT id, points_balance, current_rank_id FROM active_customers
+       WHERE card_number = ? AND restaurant_id = ?
+
+  3. BRANCH ON REWARD TYPE:
+
+     TYPE A: CASHBACK
+       - availableCredit = floor(pointsBalance / earnRate)
+       - This means: "how many BRL can the customer redeem"
+       LOG: reward.checked { card_number, restaurant_id, reward_type: cashback, points_balance }
+       → Return { type: 'cashback', availableCredit, pointsBalance, earnRate }
+
+     TYPE B: FREE PRODUCT
+       - SELECT active_reward_configs WHERE restaurant_id = ? AND is_active = true
+         ORDER BY points_required ASC
+       - Find first config where customer has enough points
+       - If qualifying config found:
+           → Return { type: 'free_product', available: true, rewardName, rewardId, pointsRequired, pointsBalance }
+       - If none qualify:
+           → Return { type: 'free_product', available: false, ... }
+
+     TYPE C: PROGRESSIVE DISCOUNT
+       - If customer has a rank:
+           SELECT name, discount_pct FROM active_ranks WHERE id = current_rank_id
+           → Return { type: 'progressive_discount', discountPct, rankName }
+       - If no rank:
+           → Return { type: 'progressive_discount', discountPct: 0, rankName: 'Sem nível' }
+
+     UNKNOWN TYPE:
+       → Return { type: 'none' }
+
+
+================================================================================
+FLOW 10: REGISTER REDEMPTION
+================================================================================
+
+Source file: src/lib/actions/rewards.ts → registerRedemption()
+Trigger: Manager/owner confirms reward redemption in POS
+Actors: Manager/Owner, Server Action, User Client, Supabase DB
+
+Step-by-step:
+
+  1. EXTRACT FORM DATA
+     - card_number, reward_config_id, reward_type
+     - If missing required fields → Return error
+
+  2. START TIMER
+
+  3. AUTHENTICATE MANAGER
+
+  4. BRANCH ON REWARD TYPE:
+
+     TYPE A/B: CASHBACK or FREE PRODUCT
+       - Requires reward_config_id
+       - Call register_redemption RPC atomically:
+         a. Validates customer + reward config
+         b. Checks sufficient points
+         c. Deducts points from customer
+         d. Inserts reward_redemption row
+         e. Inserts point_transaction row (type: 'redeem')
+         f. Returns: success, new_balance, or error
+       - If RPC returns error:
+           LOG (error): redemption.failed { card_number, restaurant_id, error }
+           → Return error
+       - If success:
+           LOG: redemption.registered { card_number, restaurant_id, reward_type,
+                                        new_balance, duration_ms }
+           → Return { success, message, newBalance }
+
+     TYPE C: PROGRESSIVE DISCOUNT
+       - Does NOT deduct points (discount is rank-based, not points-based)
+       - Fetch customer (id, points_balance)
+       - Insert reward_redemptions row with points_spent: 0
+       - Insert point_transactions row with points_delta: 0, type: 'redeem'
+         (audit trail only — shows that a discount was applied)
+       - LOG: redemption.registered { card_number, restaurant_id,
+              reward_type: progressive_discount, points_spent: 0,
+              new_balance, duration_ms }
+       → Return { success, message, newBalance }
+
+
+================================================================================
+FLOW 11: OWNER — UPDATE BRANDING
+================================================================================
+
+Source file: src/lib/actions/restaurant.ts → updateBranding()
+Trigger: Owner saves settings form (program name, colors, earn rate, reward type, expiry)
+Actors: Owner, Server Action, User Client, Supabase DB
+
+Step-by-step:
+
+  1. AUTHENTICATE OWNER
+     - getAuthenticatedOwner(): same pattern as manager auth but requires role === 'owner'
+
+  2. VALIDATE WITH ZOD
+     - program_name: non-empty, max 100
+     - primary_color, secondary_color: #RRGGBB format
+     - earn_rate: integer 1-100
+     - reward_type: enum (cashback, free_product, progressive_discount)
+     - point_expiry_days: nullable integer >= 0
+
+  3. UPDATE DATABASE
+     - UPDATE restaurants SET (all validated fields) WHERE id = restaurant_id
+
+  4. LOG AND REVALIDATE
+     LOG: restaurant.branding_updated { restaurant_id, user_id, fields: [list of field names] }
+     - revalidatePath('/dashboard/owner/settings')
+     → Return { success: true }
+
+
+================================================================================
+FLOW 12: OWNER — UPLOAD LOGO
+================================================================================
+
+Source file: src/lib/actions/restaurant.ts → uploadLogo()
+Trigger: Owner uploads a logo file
+Actors: Owner, Server Action, User Client, Supabase Storage
+
+Step-by-step:
+
+  1. AUTHENTICATE OWNER
+
+  2. VALIDATE FILE
+     - Must be non-empty
+     - Max size: 1MB (1,048,576 bytes)
+     - Allowed types: image/jpeg, image/png, image/webp, image/svg+xml
+
+  3. UPLOAD TO STORAGE
+     - Path: restaurant-logos/{restaurantId}/logo.{ext}
+     - Upsert: true (overwrites existing)
+
+  4. GET PUBLIC URL
+     - supabase.storage.from('restaurant-logos').getPublicUrl(path)
+
+  5. SAVE URL TO DATABASE
+     - UPDATE restaurants SET logo_url = publicUrl WHERE id = restaurantId
+
+  6. LOG AND REVALIDATE
+     LOG: restaurant.logo_uploaded { restaurant_id, user_id, file_size, mime_type }
+     → Return { success: true }
+
+
+================================================================================
+FLOW 13: OWNER — UPDATE RANKS
+================================================================================
+
+Source file: src/lib/actions/restaurant.ts → updateRanks()
+Trigger: Owner saves ranks configuration
+Actors: Owner, Server Action, User Client, Supabase DB
+
+Step-by-step:
+
+  1. AUTHENTICATE OWNER
+
+  2. PARSE AND VALIDATE
+     - Parse ranks_json from form data
+     - Validate each rank: name (1-50 chars), min_visits (>= 0), multiplier (0.1-10),
+       discount_pct (0-100)
+     - At least 1 rank required
+
+  3. SORT BY MIN VISITS
+     - Sort ascending so sort_order matches visit thresholds
+
+  4. ATOMIC REPLACE
+     - DELETE FROM ranks WHERE restaurant_id = ?
+     - INSERT all new ranks with sequential sort_order
+
+  5. LOG AND REVALIDATE
+     LOG: restaurant.ranks_updated { restaurant_id, user_id, rank_count }
+     → Return { success: true }
+
+
+================================================================================
+FLOW 14: OWNER — SAVE AI-GENERATED CARD IMAGE
+================================================================================
+
+Source files:
+  - src/app/api/generate-card/route.ts (generation)
+  - src/lib/actions/restaurant.ts → saveCardImage() (save)
+
+PART 1: GENERATE CARD IMAGE (API route)
+
+  Trigger: Owner clicks "Generate" with a prompt
+  Actors: Owner, API Route, OpenAI DALL-E 3
+
+  1. AUTHENTICATE (owner only via JWT)
+  2. VALIDATE PROMPT (5-500 chars)
+  3. BUILD FULL PROMPT
+     - User's prompt + brand colors + "no text/letters/numbers" + "wide landscape"
+  4. CALL DALL-E 3
+     LOG: card_design.generation_started { restaurant_id, user_id, prompt_length }
+     - Model: dall-e-3, Size: 1792x1024, Quality: standard, N: 1
+  5. ON SUCCESS:
+     LOG: card_design.generation_completed { restaurant_id, user_id, duration_ms }
+     → Return { url } (temporary OpenAI URL, expires in ~1 hour)
+  6. ON ERROR:
+     LOG (error): card_design.generation_failed { restaurant_id, error }
+     → Return error
+
+PART 2: SAVE CARD IMAGE (Server Action)
+
+  Trigger: Owner clicks "Save" on generated image
+  Actors: Owner, Server Action, OpenAI (fetch), Supabase Storage
+
+  1. AUTHENTICATE OWNER
+  2. FETCH IMAGE BYTES from temporary OpenAI URL
+  3. UPLOAD to Supabase Storage: restaurant-logos/{restaurantId}/card.png (upsert)
+  4. GET PUBLIC URL, append cache-buster: ?t={timestamp}
+  5. UPDATE restaurants SET card_image_url = urlWithCacheBust
+  6. LOG: restaurant.card_image_saved { restaurant_id, user_id }
+     → Return { success: true }
+
+
+================================================================================
+FLOW 15: OWNER — REMOVE CARD IMAGE
+================================================================================
+
+Source file: src/lib/actions/restaurant.ts → removeCardImage()
+Trigger: Owner clicks "Remove" on card design
+Actors: Owner, Server Action, Supabase Storage
+
+  1. AUTHENTICATE OWNER
+  2. DELETE FROM STORAGE: restaurant-logos/{restaurantId}/card.png
+  3. UPDATE restaurants SET card_image_url = NULL
+  4. LOG: restaurant.card_image_removed { restaurant_id, user_id }
+     → Return { success: true }
+
+
+================================================================================
+FLOW 16: OWNER — MANAGE STAFF (CREATE MANAGER)
+================================================================================
+
+Source file: src/app/api/staff/route.ts → POST
+Trigger: Owner submits "Add Manager" form with email + password
+Actors: Owner, API Route, Service Client, Supabase Auth Admin API
+
+Step-by-step:
+
+  1. VERIFY OWNER (verifyOwner helper)
+     - getUser() + getSession() + jwtDecode
+     - Assert app_role === 'owner' AND restaurant_id exists
+
+  2. VALIDATE BODY
+     - Zod: email (valid), password (min 8 chars)
+
+  3. CREATE AUTH USER (service role)
+     - serviceClient.auth.admin.createUser({ email, password, email_confirm: true })
+     - email_confirm: true skips verification (owner is setting password directly)
+
+  4. INSERT STAFF ROW
+     - INSERT INTO restaurant_staff (restaurant_id, user_id: newUser.id, role: 'manager')
+     - If fails → Delete orphan auth user (atomicity)
+         LOG (error): staff.creation_failed { restaurant_id, error }
+
+  5. SUCCESS
+     LOG: staff.created { restaurant_id, user_id, new_manager_email }
+     → Return 201 { success, manager: { id, email } }
+
+
+================================================================================
+FLOW 17: OWNER — LIST STAFF
+================================================================================
+
+Source file: src/app/api/staff/route.ts → GET
+Trigger: Owner opens Team page
+Actors: Owner, API Route, Service Client
+
+  1. VERIFY OWNER
+  2. FETCH STAFF
+     - SELECT FROM restaurant_staff WHERE restaurant_id = ? AND role = 'manager' AND deleted_at IS NULL
+  3. ENRICH WITH EMAILS
+     - For each staff row: serviceClient.auth.admin.getUserById(user_id) → extract email
+  4. LOG: staff.listed { restaurant_id, user_id, count }
+     → Return { staff: enriched[] }
+
+
+================================================================================
+FLOW 18: ADMIN DASHBOARD — AUTHENTICATION & ACCESS CONTROL
+================================================================================
+
+Source files:
+  - src/lib/supabase/middleware.ts (route guard)
+  - src/app/dashboard/admin/layout.tsx (layout guard)
+
+TWO LAYERS OF PROTECTION:
+
+  LAYER 1: MIDDLEWARE (Flow 1, Step 4d)
+    - Any request to /dashboard/admin/* where role !== 'admin'
+    - → Redirect to /login with warning log
+
+  LAYER 2: LAYOUT (server component)
+    - getUser() — redirect if no user
+    - getSession() → decode JWT
+    - Assert claims.app_role === 'admin'
+    - If not → redirect to /login
+
+  Admin layout structure:
+    - Dark theme sidebar (220px wide)
+    - "Revisit" title with "Admin" badge in accent color
+    - Navigation: Visão Geral, Restaurantes, Registros
+    - Logout button at bottom
+    - Main content area (flex-1)
+
+  Key difference from owner/manager:
+    - Admin uses createServiceClient() for all data queries (bypasses RLS)
+    - Admin has NO restaurant_id — sees ALL tenants
+
+
+================================================================================
+FLOW 19: ADMIN — OVERVIEW PAGE (Visão Geral)
+================================================================================
+
+Source file: src/app/dashboard/admin/page.tsx
+Trigger: Admin navigates to /dashboard/admin
+Actors: Admin, Server Component, Service Client
+
+Data queries (ALL run in parallel via Promise.all):
+
+  Query 1: Total Restaurants
+    - SELECT count(*) FROM active_restaurants
+
+  Query 2: Total Customers
+    - SELECT count(*) FROM active_customers
+
+  Query 3: Sales Volume (period-filtered)
+    - SELECT amount_cents FROM active_sales WHERE created_at >= since
+    - Sum all amount_cents in JavaScript
+
+  Query 4: New Signups (period-filtered)
+    - SELECT count(*) FROM active_customers WHERE created_at >= since
+
+  Query 5: Active Restaurants (period-filtered)
+    - SELECT restaurant_id FROM active_sales WHERE created_at >= since
+    - Count distinct restaurant_ids in JavaScript (Set)
+
+  Query 6: Points Issued (period-filtered)
+    - SELECT points_delta FROM active_point_transactions
+      WHERE transaction_type = 'earn' AND created_at >= since
+    - Sum all points_delta in JavaScript
+
+  Query 7: Redeem Count (period-filtered)
+    - SELECT count(*) FROM active_point_transactions
+      WHERE transaction_type = 'redeem' AND created_at >= since
+
+Derived metrics:
+  - Redemption Rate = redeemCount / (earnCount + redeemCount) * 100
+
+Period selector: 7d | 30d | 90d | all (default: 30d)
+  - Client component (PeriodSelector) with basePath="/dashboard/admin"
+  - Uses router.push with startTransition for non-blocking navigation
+
+UI layout:
+  Row 1 (4 columns): Total Restaurantes | Total Clientes | Volume de Vendas (BRL) | Novos Cadastros
+  Row 2 (3 columns): Restaurantes Ativos | Pontos Emitidos | Taxa de Resgate (%)
+
+
+================================================================================
+FLOW 20: ADMIN — RESTAURANTS PAGE
+================================================================================
+
+Source file: src/app/dashboard/admin/restaurants/page.tsx
+Trigger: Admin navigates to /dashboard/admin/restaurants
+Actors: Admin, Server Component, Service Client
+
+Step-by-step:
+
+  1. FETCH ALL RESTAURANTS
+     - SELECT id, name, slug, created_at FROM active_restaurants ORDER BY created_at DESC
+
+  2. FETCH AGGREGATES IN PARALLEL
+     - Customers: SELECT id, restaurant_id FROM active_customers WHERE restaurant_id IN (...)
+     - Sales: SELECT id, restaurant_id, amount_cents FROM active_sales WHERE restaurant_id IN (...)
+     - Staff: SELECT id, restaurant_id FROM active_restaurant_staff WHERE restaurant_id IN (...)
+
+  3. BUILD AGGREGATE MAPS (in-memory)
+     For each restaurant_id:
+       - customerCounts: count of customers
+       - saleCounts: count of sales
+       - revenueCents: sum of amount_cents
+       - staffCounts: count of staff
+
+  4. SORT BY REVENUE DESCENDING
+
+  5. RENDER TABLE
+     Columns: Restaurante | Slug | Clientes | Vendas | Receita (BRL) | Equipe | Criado em
+
+
+================================================================================
+FLOW 21: ADMIN — LOGS PAGE (Cross-Tenant)
+================================================================================
+
+Source file: src/app/dashboard/admin/logs/page.tsx
+Trigger: Admin navigates to /dashboard/admin/logs
+Actors: Admin, Server Component, Service Client
+
+This is the same pattern as the owner logs page (Flow in owner dashboard),
+with two key differences:
+  1. Uses createServiceClient() instead of createClient() — no tenant filter
+  2. Adds a "Restaurante" column to both tabs
+
+COMMON SETUP:
+  - Fetch ALL restaurant names: SELECT id, name FROM active_restaurants
+  - Build restaurantNameMap for display
+
+TAB: VENDAS (Sales)
+  Query: SELECT id, amount_cents, points_earned, created_at, customer_id,
+         staff_id, restaurant_id FROM active_sales
+         WHERE created_at >= since
+         ORDER BY created_at DESC
+         RANGE (pagination)
+
+  Enrichment:
+    - Customers: SELECT id, name, card_number FROM active_customers WHERE id IN (...)
+    - Staff: SELECT id, role FROM active_restaurant_staff WHERE id IN (...)
+
+  Columns: Data/Hora | Restaurante | Cliente | Cartão | Valor | Pontos | Registrado por
+
+TAB: ATIVIDADE (Activity / Point Transactions)
+  Query: SELECT id, customer_id, points_delta, balance_after, transaction_type,
+         note, reference_id, created_at, restaurant_id FROM active_point_transactions
+         WHERE created_at >= since
+         ORDER BY created_at DESC
+         RANGE (pagination)
+
+  Enrichment:
+    - Customers: SELECT id, name FROM active_customers WHERE id IN (...)
+    - For 'earn' transactions: look up staff role via reference_id → sales → staff
+
+  Columns: Data/Hora | Restaurante | Cliente | Tipo | Pontos | Saldo | Gerente | Nota
+
+  Transaction type badges:
+    earn       → emerald green badge, label: "Compra"
+    redeem     → blue badge, label: "Resgate"
+    adjustment → amber badge, label: "Ajuste"
+    expiry     → red badge, label: "Expiração"
+
+Pagination: 25 rows per page, with Previous/Next links
+
+
+================================================================================
+FLOW 22: DATABASE MIGRATION — ADMIN ROLE SETUP
+================================================================================
+
+Source file: supabase/migrations/0010_admin_role.sql
+Trigger: Run via `supabase db push` or `supabase migration up`
+
+Changes applied:
+
+  1. ADD ENUM VALUE
+     ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'admin'
+     → The app_role enum now has: owner, manager, admin
+
+  2. MAKE restaurant_id NULLABLE
+     ALTER TABLE public.restaurant_staff ALTER COLUMN restaurant_id DROP NOT NULL
+     → Admin users have a restaurant_staff row with restaurant_id = NULL
+
+  3. UPDATE JWT HOOK (see Flow 5 for full logic)
+
+  4. ADD CROSS-TENANT INDEXES
+     - idx_sales_created: sales(created_at DESC)
+       → Used by admin logs, sorted by date
+     - idx_customers_restaurant_created: customers(restaurant_id, created_at DESC)
+       → Used by admin overview "new signups" query
+     - idx_point_transactions_type_created: point_transactions(transaction_type, created_at DESC)
+       → Used by admin overview "points issued" and "redemption rate" queries
+
+  BOOTSTRAP ADMIN USER (manual, after migration):
+    INSERT INTO restaurant_staff (user_id, role)
+    VALUES ('<your-auth-user-uuid>', 'admin');
+
+    Note: restaurant_id is omitted (defaults to NULL). The user must already
+    exist in auth.users (created via the normal signup flow or Supabase dashboard).
+
+
+================================================================================
+FLOW 23: COMPLETE LOG EVENT CATALOG
+================================================================================
+
+All structured log events emitted by the system, grouped by domain:
+
+MIDDLEWARE EVENTS (src/lib/supabase/middleware.ts):
+  middleware.request              INFO   { pathname, method }
+  middleware.auth_redirect        INFO   { user_id, role, destination }
+  middleware.auth_redirect        WARN   { user_id, role, destination, reason }
+  middleware.slug_resolved        INFO   { slug, restaurant_id, cache_hit }
+  middleware.completed            INFO   { pathname, duration_ms }
+
+AUTH EVENTS (src/lib/actions/auth.ts):
+  auth.signup_completed           INFO   { user_id, restaurant_id, slug }
+  auth.signup_failed              ERROR  { email, error }
+  auth.login_completed            INFO   { user_id, app_role, restaurant_id }
+  auth.login_failed               ERROR  { email, error }
+  auth.logout                     INFO   { user_id }
+
+CUSTOMER EVENTS (src/lib/actions/customer.ts):
+  customer.registration_started   INFO   { restaurant_id, phone (last 4) }
+  customer.registration_completed INFO   { restaurant_id, card_number, is_existing, duration_ms }
+  customer.registration_failed    ERROR  { restaurant_id, error }
+
+POS EVENTS (src/lib/actions/pos.ts):
+  pos.lookup                      INFO   { card_number, restaurant_id, staff_id, points_preview }
+  sale.registered                 INFO   { card_number, restaurant_id, staff_id, amount_cents,
+                                           points_earned, rank_promoted, duration_ms }
+  sale.failed                     ERROR  { card_number, restaurant_id, error }
+
+REWARD EVENTS (src/lib/actions/rewards.ts):
+  reward.checked                  INFO   { card_number, restaurant_id, reward_type, points_balance }
+  redemption.registered           INFO   { card_number, restaurant_id, reward_type,
+                                           new_balance, duration_ms }
+  redemption.failed               ERROR  { card_number, restaurant_id, error }
+
+RESTAURANT EVENTS (src/lib/actions/restaurant.ts):
+  restaurant.branding_updated     INFO   { restaurant_id, user_id, fields }
+  restaurant.logo_uploaded        INFO   { restaurant_id, user_id, file_size, mime_type }
+  restaurant.ranks_updated        INFO   { restaurant_id, user_id, rank_count }
+  restaurant.card_image_saved     INFO   { restaurant_id, user_id }
+  restaurant.card_image_removed   INFO   { restaurant_id, user_id }
+
+STAFF EVENTS (src/app/api/staff/route.ts):
+  staff.listed                    INFO   { restaurant_id, user_id, count }
+  staff.created                   INFO   { restaurant_id, user_id, new_manager_email }
+  staff.creation_failed           ERROR  { restaurant_id, error }
+
+CARD DESIGN EVENTS (src/app/api/generate-card/route.ts):
+  card_design.generation_started  INFO   { restaurant_id, user_id, prompt_length }
+  card_design.generation_completed INFO  { restaurant_id, user_id, duration_ms }
+  card_design.generation_failed   ERROR  { restaurant_id, error }
+
+
+================================================================================
+FLOW 24: END-TO-END USER JOURNEYS (COMPOSITE FLOWS)
+================================================================================
+
+JOURNEY A: NEW RESTAURANT ONBOARDING
+  1. Owner visits /signup
+  2. Flow 2: Signup → creates auth user + restaurant + staff
+  3. Redirect to /login?signup=success
+  4. Flow 3: Login → JWT hook injects app_role=owner, restaurant_id
+  5. Redirect to /dashboard/owner
+  6. Flow 1: Middleware checks role → allows access
+  7. Owner configures: branding (Flow 11), logo (Flow 12), ranks (Flow 13)
+  8. Owner creates managers: Flow 16
+  9. Owner shares slug URL (e.g., /my-restaurant) with customers
+
+JOURNEY B: CUSTOMER LIFECYCLE
+  1. Customer visits /{slug}
+  2. Flow 1: Middleware resolves slug → injects restaurant headers
+  3. Flow 6: Customer registers → gets card number
+  4. Customer visits restaurant, presents card
+  5. Manager uses POS:
+     a. Flow 7: Lookup → preview points
+     b. Flow 8: Register sale → earn points, possible rank promotion
+     c. Flow 9: Check rewards → show available rewards
+     d. Flow 10: Register redemption (if applicable)
+  6. Repeat steps 4-5 for each visit
+
+JOURNEY C: ADMIN MONITORING
+  1. Admin logs in (Flow 3) → redirect to /dashboard/admin
+  2. Flow 19: Overview → see platform-wide KPIs
+  3. Flow 20: Restaurants → see all restaurants with stats
+  4. Flow 21: Logs → investigate specific transactions across tenants
+  5. Admin uses period selector to filter by time range
+
+JOURNEY D: MANAGER DAILY OPERATIONS
+  1. Manager logs in (Flow 3) → redirect to /dashboard/manager
+  2. For each customer transaction:
+     a. Enter card number + sale amount in POS
+     b. Flow 7: Preview → see customer info + points preview
+     c. Flow 8: Confirm → register the sale
+     d. Flow 9 + 10: Handle any reward redemption
+  3. Repeat throughout the day
+
+
+================================================================================
+DATA FLOW: REQUEST → MIDDLEWARE → SERVER COMPONENT → DATABASE
+================================================================================
+
+For a typical dashboard page load:
+
+  Browser
+    │
+    ▼
+  Next.js Middleware (middleware.ts)
+    │ ├─ Refresh auth cookies (getUser)
+    │ ├─ Read JWT claims (getSession + decode)
+    │ ├─ Role-based route guard
+    │ └─ [Tenant routes] Slug → restaurant_id resolution + header injection
+    │
+    ▼
+  Next.js Layout (layout.tsx)
+    │ ├─ Second auth check (getUser + getSession + decode)
+    │ └─ Assert correct role (owner/manager/admin)
+    │
+    ▼
+  Next.js Page (page.tsx)
+    │ ├─ [Owner/Manager] createClient() → queries respect RLS
+    │ └─ [Admin] createServiceClient() → queries bypass RLS
+    │
+    ▼
+  Supabase DB
+    │ ├─ Views: active_* (soft-delete filter)
+    │ ├─ RLS policies (tenant isolation for non-admin)
+    │ └─ Returns data scoped to authorized tenant
+    │
+    ▼
+  Server-rendered HTML → Browser
+
+
+DATA FLOW: FORM SUBMISSION → SERVER ACTION → DATABASE
+================================================================================
+
+For a typical form submission (e.g., register sale):
+
+  Browser (form submit)
+    │
+    ▼
+  Server Action (pos.ts → registerSale)
+    │ ├─ Extract form data
+    │ ├─ Validate with Zod
+    │ ├─ log.info('..._started', ...)    ← STRUCTURED LOG
+    │ ├─ Authenticate (getUser + getSession + decode JWT)
+    │ ├─ Call RPC / query DB (via user client, respects RLS)
+    │ ├─ [Success] log.info('..._completed', { duration_ms })  ← STRUCTURED LOG
+    │ └─ [Error]   log.error('..._failed', { error })          ← STRUCTURED LOG
+    │
+    ▼
+  Return state to Browser (React re-renders with new state)
+
+
+================================================================================
+SECURITY MODEL SUMMARY
+================================================================================
+
+Three-layer defense:
+
+  LAYER 1: MIDDLEWARE (route-level)
+    - Blocks unauthorized role from accessing wrong dashboard section
+    - Tenant routes: resolves slug server-side (cannot be spoofed)
+    - Injects x-restaurant-id header (server-only, not client-controlled)
+
+  LAYER 2: LAYOUT / ACTION (application-level)
+    - Every layout re-verifies auth + role
+    - Every server action re-verifies auth + role
+    - JWT is decoded server-side (not trusted from client alone)
+    - getUser() validates the JWT signature with Supabase (not just decode)
+
+  LAYER 3: RLS (database-level)
+    - Every table has Row-Level Security enabled
+    - Policies ensure tenant isolation: owner/manager can only see their restaurant's data
+    - Admin bypasses RLS by using service role client
+    - Even if middleware/action checks are bypassed, RLS prevents data leakage
+
+  JWT claim injection:
+    - Custom hook runs at token issue time (server-side, cannot be modified by client)
+    - Claims (app_role, restaurant_id) are embedded in the JWT
+    - RLS policies read these claims for tenant filtering
+
+
+================================================================================
+END OF DOCUMENT
+================================================================================

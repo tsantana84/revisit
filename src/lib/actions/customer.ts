@@ -3,6 +3,7 @@
 import { createServiceClient } from '@/lib/supabase/service'
 import { headers } from 'next/headers'
 import { z } from 'zod'
+import { log } from '@/lib/logger'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -60,6 +61,8 @@ export async function registerCustomer(
   }
 
   const { name, phone } = parsed.data
+  const startTime = Date.now()
+  log.info('customer.registration_started', { restaurant_id: restaurantId, phone: phone.slice(-4) })
   const supabase = createServiceClient()
 
   // 4. Check for duplicate phone — return existing card (idempotent)
@@ -82,6 +85,7 @@ export async function registerCustomer(
         .single()
       if (rank) rankName = rank.name
     }
+    log.info('customer.registration_completed', { restaurant_id: restaurantId, card_number: existing.card_number, is_existing: true, duration_ms: Date.now() - startTime })
     return {
       step: 'success',
       cardNumber: existing.card_number,
@@ -98,6 +102,7 @@ export async function registerCustomer(
   )
 
   if (rpcError || !cardNumberData) {
+    log.error('customer.registration_failed', { restaurant_id: restaurantId, error: rpcError?.message ?? 'card_number_generation_failed' })
     return { step: 'error', message: 'Erro ao gerar numero do cartao. Tente novamente.' }
   }
 
@@ -155,10 +160,12 @@ export async function registerCustomer(
       }
     }
 
+    log.error('customer.registration_failed', { restaurant_id: restaurantId, error: insertError.message })
     return { step: 'error', message: 'Erro ao cadastrar. Tente novamente.' }
   }
 
   // 9. Return success with new card
+  log.info('customer.registration_completed', { restaurant_id: restaurantId, card_number: cardNumber, is_existing: false, duration_ms: Date.now() - startTime })
   return {
     step: 'success',
     cardNumber,

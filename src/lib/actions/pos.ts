@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { jwtDecode } from 'jwt-decode'
 import { z } from 'zod'
 import { validateCardNumber } from '@/lib/utils/card-number'
+import { log } from '@/lib/logger'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -189,6 +190,8 @@ export async function lookupCustomer(
   // 9. Calculate points preview
   const pointsPreview = Math.round((amountCents / 100) * earnRate * multiplier)
 
+  log.info('pos.lookup', { card_number: cardNumber, restaurant_id: restaurantId, staff_id: staffId, points_preview: pointsPreview })
+
   return {
     step: 'preview',
     customerName: customer.name,
@@ -224,6 +227,7 @@ export async function registerSale(
   }
 
   const { card_number, amount_cents, staff_id } = validated.data
+  const startTime = Date.now()
 
   // 3. Auth check
   const auth = await getAuthenticatedManager()
@@ -231,7 +235,7 @@ export async function registerSale(
     return { step: 'error', message: auth.error }
   }
 
-  const { supabase } = auth
+  const { supabase, restaurantId } = auth
 
   // 4. Call register_sale RPC atomically
   const { data, error: rpcError } = await supabase.rpc('register_sale', {
@@ -242,11 +246,13 @@ export async function registerSale(
 
   // 5. Handle PostgREST-level errors
   if (rpcError) {
+    log.error('sale.failed', { card_number, restaurant_id: restaurantId, error: rpcError.message })
     return { step: 'error', message: 'Erro interno. Tente novamente.' }
   }
 
   // 6. Handle RPC application-level errors
   if (data?.error) {
+    log.error('sale.failed', { card_number, restaurant_id: restaurantId, error: data.error })
     const errorMap: Record<string, string> = {
       not_authenticated: 'Sessão expirada. Faça login novamente.',
       invalid_card_format: 'Formato de cartão inválido.',
@@ -259,6 +265,15 @@ export async function registerSale(
   }
 
   // 7. Return success with points and rank promotion info for Phase 4 consumption
+  log.info('sale.registered', {
+    card_number,
+    restaurant_id: restaurantId,
+    staff_id,
+    amount_cents,
+    points_earned: data.points_earned,
+    rank_promoted: data.rank_promoted ?? false,
+    duration_ms: Date.now() - startTime,
+  })
   return {
     step: 'success',
     pointsEarned: data.points_earned,

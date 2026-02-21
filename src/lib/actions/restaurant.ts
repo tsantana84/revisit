@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { jwtDecode } from 'jwt-decode'
 import { z } from 'zod'
+import { log } from '@/lib/logger'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -177,6 +178,7 @@ export async function updateBranding(
     return { message: `Erro ao salvar configurações: ${error.message}` }
   }
 
+  log.info('restaurant.branding_updated', { restaurant_id: restaurantId, user_id: auth.userId, fields: Object.keys(validated.data) })
   revalidatePath('/dashboard/owner/settings')
   return { success: true, message: 'Configurações salvas com sucesso' }
 }
@@ -251,6 +253,7 @@ export async function uploadLogo(
     return { message: `Erro ao salvar URL do logo: ${updateError.message}` }
   }
 
+  log.info('restaurant.logo_uploaded', { restaurant_id: restaurantId, user_id: auth.userId, file_size: file.size, mime_type: file.type })
   revalidatePath('/dashboard/owner/settings')
   return { success: true, message: 'Logo atualizado com sucesso' }
 }
@@ -320,6 +323,7 @@ export async function updateRanks(
     return { message: `Erro ao salvar níveis: ${insertError.message}` }
   }
 
+  log.info('restaurant.ranks_updated', { restaurant_id: restaurantId, user_id: auth.userId, rank_count: ranksToInsert.length })
   revalidatePath('/dashboard/owner/settings')
   return { success: true, message: 'Níveis salvos com sucesso' }
 }
@@ -386,6 +390,7 @@ export async function saveCardImage(
     return { message: `Erro ao salvar URL do cartão: ${updateError.message}` }
   }
 
+  log.info('restaurant.card_image_saved', { restaurant_id: restaurantId, user_id: auth.userId })
   revalidatePath('/dashboard/owner/settings')
   return { success: true, message: 'Design do cartão salvo com sucesso' }
 }
@@ -418,6 +423,7 @@ export async function removeCardImage(
     return { message: `Erro ao remover design: ${updateError.message}` }
   }
 
+  log.info('restaurant.card_image_removed', { restaurant_id: restaurantId, user_id: auth.userId })
   revalidatePath('/dashboard/owner/settings')
   return { success: true, message: 'Design do cartão removido' }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { jwtDecode } from 'jwt-decode'
 import OpenAI from 'openai'
+import { log } from '@/lib/logger'
 
 interface RevisitClaims {
   restaurant_id?: string
@@ -61,6 +62,8 @@ export async function POST(request: Request) {
     'Wide landscape background image. Left side slightly darker. Premium aesthetic, high quality.',
   ].join('. ')
 
+  log.info('card_design.generation_started', { restaurant_id: claims.restaurant_id, user_id: user.id, prompt_length: prompt.length })
+  const startTime = Date.now()
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
   try {
@@ -78,12 +81,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nenhuma imagem gerada' }, { status: 500 })
     }
 
+    log.info('card_design.generation_completed', { restaurant_id: claims.restaurant_id, user_id: user.id, duration_ms: Date.now() - startTime })
     return NextResponse.json({ url })
   } catch (error) {
     const message =
       error instanceof OpenAI.APIError
         ? error.message
         : 'Erro ao gerar imagem'
+    log.error('card_design.generation_failed', { restaurant_id: claims.restaurant_id, error: message })
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

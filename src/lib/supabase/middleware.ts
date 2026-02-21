@@ -1,10 +1,11 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { jwtDecode } from 'jwt-decode'
+import { log } from '@/lib/logger'
 
 interface RevisitClaims {
   restaurant_id?: string
-  app_role?: 'owner' | 'manager'
+  app_role?: 'owner' | 'manager' | 'admin'
   sub: string
   exp: number
 }
@@ -57,6 +58,10 @@ function isTenantRoute(pathname: string): boolean {
  * 3. Injects x-restaurant-id and x-restaurant-name headers for Server Components
  */
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
+  const startTime = Date.now()
+  const { pathname } = request.nextUrl
+  log.info('middleware.request', { pathname, method: request.method })
+
   // Start with a response that forwards the request
   let supabaseResponse = NextResponse.next({
     request,
@@ -95,8 +100,6 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   // ---------------------------------------------------------------------------
   // 2. Dashboard route protection — redirect based on auth + role
   // ---------------------------------------------------------------------------
-  const { pathname } = request.nextUrl
-
   if (pathname.startsWith('/dashboard')) {
     // getSession() is acceptable here: we're reading claims for routing only, not for data trust.
     // RLS + layout auth checks handle the actual security enforcement.
@@ -113,22 +116,30 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
 
     // Bare /dashboard — redirect to role-appropriate sub-route
     if (pathname === '/dashboard' || pathname === '/dashboard/') {
-      if (role === 'owner') {
-        return NextResponse.redirect(new URL('/dashboard/owner', request.url))
-      } else if (role === 'manager') {
-        return NextResponse.redirect(new URL('/dashboard/manager', request.url))
-      } else {
-        return NextResponse.redirect(new URL('/login', request.url))
-      }
+      let destination = '/login'
+      if (role === 'owner') destination = '/dashboard/owner'
+      else if (role === 'manager') destination = '/dashboard/manager'
+      else if (role === 'admin') destination = '/dashboard/admin'
+
+      log.info('middleware.auth_redirect', { user_id: claims.sub, role, destination })
+      return NextResponse.redirect(new URL(destination, request.url))
     }
 
     // Owner dashboard — block non-owners
     if (pathname.startsWith('/dashboard/owner') && role !== 'owner') {
+      log.warn('middleware.auth_redirect', { user_id: claims.sub, role, destination: '/login', reason: 'not_owner' })
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
     // Manager dashboard — block non-managers
     if (pathname.startsWith('/dashboard/manager') && role !== 'manager') {
+      log.warn('middleware.auth_redirect', { user_id: claims.sub, role, destination: '/login', reason: 'not_manager' })
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    // Admin dashboard — block non-admins
+    if (pathname.startsWith('/dashboard/admin') && role !== 'admin') {
+      log.warn('middleware.auth_redirect', { user_id: claims.sub, role, destination: '/login', reason: 'not_admin' })
       return NextResponse.redirect(new URL('/login', request.url))
     }
   }
@@ -144,8 +155,10 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
         slugCache.delete(slug)
       } else {
         // Cache hit — inject headers and return
+        log.info('middleware.slug_resolved', { slug, restaurant_id: cached.restaurantId, cache_hit: true })
         supabaseResponse.headers.set('x-restaurant-id', cached.restaurantId)
         supabaseResponse.headers.set('x-restaurant-name', cached.name)
+        log.info('middleware.completed', { pathname, duration_ms: Date.now() - startTime })
         return supabaseResponse
       }
     }
@@ -182,10 +195,13 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
       cachedAt: Date.now(),
     })
 
+    log.info('middleware.slug_resolved', { slug, restaurant_id: restaurant.id, cache_hit: false })
+
     // Inject tenant headers for Server Components
     supabaseResponse.headers.set('x-restaurant-id', restaurant.id)
     supabaseResponse.headers.set('x-restaurant-name', restaurant.name)
   }
 
+  log.info('middleware.completed', { pathname, duration_ms: Date.now() - startTime })
   return supabaseResponse
 }
