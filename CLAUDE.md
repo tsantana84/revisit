@@ -47,7 +47,7 @@ src/
 │   └── utils/
 │       └── card-number.ts      # Card number validation
 supabase/
-├── migrations/                 # 0001-0011 numbered SQL migrations
+├── migrations/                 # 0001-0012 numbered SQL migrations
 ├── config.toml
 └── seed.sql
 ```
@@ -59,6 +59,10 @@ npm run dev          # Start dev server
 npm run build        # Production build
 npm run lint         # ESLint
 npm run test:rls     # Run RLS tests (vitest)
+
+# Deployment
+npx vercel --prod    # Deploy to Vercel production
+npx supabase db push # Push migrations to remote Supabase
 ```
 
 ## Authentication
@@ -77,9 +81,11 @@ requireAdmin()     // Throws if not admin
 
 **Roles:** `owner` | `manager` | `admin`
 
+**DB fallback for stale sessions:** Clerk JWTs are cached ~60 seconds. After updating `publicMetadata`, the session token won't reflect the change immediately. `getRevisitAuth()` handles this by falling back to a direct `restaurant_staff` query when session claims are empty, then syncing Clerk metadata for future requests. **Never rely solely on session claims for auth decisions.**
+
 **Three-layer security:**
 1. Middleware — route guards via `clerkMiddleware`
-2. Layout/Action — auth helpers throw on unauthorized
+2. Layout/Action — auth helpers throw on unauthorized (redirect to `/onboarding`, not `/login`)
 3. Database — RLS policies read JWT claims
 
 ## Supabase Clients
@@ -116,7 +122,7 @@ export type SaleState =
 
 `src/middleware.ts` handles:
 - Route protection (Clerk `auth.protect()`)
-- Role-based dashboard redirects
+- Role-based dashboard redirects — **only blocks when role IS present and wrong**. If no role in session (stale JWT), lets through so layout's DB fallback handles it.
 - Tenant slug resolution (`/:slug/*` → `x-restaurant-id` header injection)
 - Slug cache with 5-minute TTL
 
@@ -147,7 +153,8 @@ Output is one JSON line per event to stdout — compatible with Vercel, Datadog,
 - **Soft deletes:** All entities have `deleted_at` column. Views prefixed `active_` filter these out.
 - **Audit trail:** `point_transactions` table tracks every earn/redeem with `balance_after`
 - **Atomic operations:** Card number generation uses an RPC function for uniqueness
-- **Migrations:** Numbered `0001_` through `0011_`. Always add the next number.
+- **Migrations:** Numbered `0001_` through `0012_`. Always add the next number.
+- **`restaurant_staff.user_id`** is `TEXT` (Clerk IDs like `user_2xYz...`), not UUID. FK to `auth.users` was dropped in migration `0012`.
 
 ## Environment Variables
 
@@ -163,8 +170,6 @@ CLERK_SECRET_KEY
 CLERK_WEBHOOK_SECRET
 NEXT_PUBLIC_CLERK_SIGN_IN_URL=/login
 NEXT_PUBLIC_CLERK_SIGN_UP_URL=/signup
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/onboarding
 
 # OpenAI
 OPENAI_API_KEY
@@ -187,4 +192,6 @@ OPENAI_API_KEY
 - Zod for all input validation
 - Discriminated unions for action return types (`step: 'success' | 'error'`)
 - Dark theme dashboard classes prefixed `db-` (e.g., `db-card`, `db-text`, `db-border`)
+- Auth pages use `auth-gradient-bg` (dark gradient + animated glow) and `auth-card` (glassmorphism) utilities
+- Onboarding page is a server component (`page.tsx`) that checks for existing staff, with a separate client form (`onboarding-form.tsx`)
 - No test files colocated with source (RLS tests in `supabase/tests/`)
