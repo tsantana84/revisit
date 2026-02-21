@@ -9,7 +9,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 ## Current Position
 
-Phase: 3 of 5 (Loyalty Engine + Manager POS)
+Phase: 3 of 4 (Loyalty Engine + Manager POS)
 Plan: 4 of 4 in current phase — PHASE COMPLETE
 Status: Phase 3 complete
 Last activity: 2026-02-21 — Completed 03-04 (Manager POS page: card lookup, sale confirmation, reward flow; phase 3 all 4 plans done)
