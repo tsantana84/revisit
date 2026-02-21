@@ -37,7 +37,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **RANK-02**: Default ranks are: Bronze (0+ visits, 1x), Prata (5+ visits, 1.5x), Gold (15+ visits, 2x), VIP (30+ visits, 3x)
 - [x] **RANK-03**: Customer rank is determined by total number of visits (not points)
 - [x] **RANK-04**: When a customer crosses a rank threshold, they are promoted automatically
-- [x] **RANK-05**: Wallet card color changes and customer receives a push notification on rank promotion
+- [-] **RANK-05**: Wallet card color changes and customer receives a push notification on rank promotion (promotion detected in Phase 3; wallet color + push deferred to Phase 4)
 
 ### Rewards
 
@@ -150,7 +150,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RANK-02 | Phase 3 | Complete |
 | RANK-03 | Phase 3 | Complete |
 | RANK-04 | Phase 3 | Complete |
-| RANK-05 | Phase 3 | Complete |
+| RANK-05 | Phase 3 + Phase 4 | Partial (promotion detection done; wallet color + push in Phase 4) |
 | RWRD-01 | Phase 3 | Complete |
 | RWRD-02 | Phase 3 | Complete |
 | RWRD-03 | Phase 3 | Complete |

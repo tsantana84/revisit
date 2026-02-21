@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Foundation** - Database schema, RLS policies, auth JWT claims, and tenant middleware
 - [x] **Phase 2: Owner Setup** - Owner and manager auth flows, restaurant branding config, loyalty program configuration (completed 2026-02-21)
-- [ ] **Phase 3: Loyalty Engine + Manager POS** - Card number generation, points engine, rank system, rewards, and the manager transaction panel
+- [x] **Phase 3: Loyalty Engine + Manager POS** - Card number generation, points engine, rank system, rewards, and the manager transaction panel (completed 2026-02-21)
 - [ ] **Phase 4: Apple Wallet** - Pass generation, Apple web service endpoints, APNs push notifications
 - [ ] **Phase 5: Customer Experience + Analytics** - Customer registration landing page, onboarding flow, and owner analytics dashboard
 
@@ -114,6 +114,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/3 | In progress | - |
 | 2. Owner Setup | 3/3 | Complete | 2026-02-21 |
-| 3. Loyalty Engine + Manager POS | 0/4 | Not started | - |
+| 3. Loyalty Engine + Manager POS | 0/4 | Complete    | 2026-02-21 |
 | 4. Apple Wallet | 0/3 | Not started | - |
 | 5. Customer Experience + Analytics | 0/3 | Not started | - |
