@@ -13,7 +13,7 @@ REVISIT is built in five phases, each delivering a coherent capability that buil
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Foundation** - Database schema, RLS policies, auth JWT claims, and tenant middleware
-- [ ] **Phase 2: Owner Setup** - Owner and manager auth flows, restaurant branding config, loyalty program configuration
+- [x] **Phase 2: Owner Setup** - Owner and manager auth flows, restaurant branding config, loyalty program configuration (completed 2026-02-21)
 - [ ] **Phase 3: Loyalty Engine + Manager POS** - Card number generation, points engine, rank system, rewards, and the manager transaction panel
 - [ ] **Phase 4: Apple Wallet** - Pass generation, Apple web service endpoints, APNs push notifications
 - [ ] **Phase 5: Customer Experience + Analytics** - Customer registration landing page, onboarding flow, and owner analytics dashboard
@@ -33,8 +33,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Database schema, RLS policies, soft-delete views, and seed data
-- [ ] 01-02-PLAN.md — Custom Access Token Hook + SDK-based cross-tenant isolation test suite
-- [ ] 01-03-PLAN.md — Next.js tenant middleware with slug resolution, Supabase client factories
+- [x] 01-02-PLAN.md — Custom Access Token Hook + SDK-based cross-tenant isolation test suite
+- [x] 01-03-PLAN.md — Next.js tenant middleware with slug resolution, Supabase client factories
 
 ### Phase 2: Owner Setup
 **Goal**: A restaurant owner can sign up, configure their loyalty program, and have it ready to accept customers
@@ -49,9 +49,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Schema migration (branding/config columns, storage bucket), service role client, owner signup/login auth flow, middleware dashboard protection, role-guarded dashboard layouts
-- [ ] 02-02-PLAN.md — Manager account creation (Route Handler with admin API), owner team management page
-- [ ] 02-03-PLAN.md — Restaurant branding config (logo, colors, program name) + loyalty program config (earn rate, reward type, point expiry, ranks with multipliers and visit thresholds)
+- [x] 02-01-PLAN.md — Schema migration (branding/config columns, storage bucket), service role client, owner signup/login auth flow, middleware dashboard protection, role-guarded dashboard layouts
+- [x] 02-02-PLAN.md — Manager account creation (Route Handler with admin API), owner team management page
+- [x] 02-03-PLAN.md — Restaurant branding config (logo, colors, program name) + loyalty program config (earn rate, reward type, point expiry, ranks with multipliers and visit thresholds)
 
 ### Phase 3: Loyalty Engine + Manager POS
 **Goal**: A manager can look up a customer by card number and register a sale in under 30 seconds, with points, rank promotion, and reward unlocking calculated automatically
@@ -114,7 +114,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/3 | In progress | - |
-| 2. Owner Setup | 0/3 | Not started | - |
+| 2. Owner Setup | 3/3 | Complete | 2026-02-21 |
 | 3. Loyalty Engine + Manager POS | 0/5 | Not started | - |
 | 4. Apple Wallet | 0/3 | Not started | - |
 | 5. Customer Experience + Analytics | 0/3 | Not started | - |
