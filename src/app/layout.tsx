@@ -13,13 +13,15 @@ export const metadata: Metadata = {
   description: 'Loyalty card app',
 }
 
+export const dynamic = 'force-dynamic'
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider dynamic>
       <html lang="pt-BR" className={geist.variable}>
         <body className="font-sans antialiased">{children}</body>
       </html>
