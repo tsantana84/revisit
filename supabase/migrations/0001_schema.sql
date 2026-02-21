@@ -57,13 +57,14 @@ CREATE TABLE public.customers (
   restaurant_id    UUID NOT NULL REFERENCES public.restaurants(id),
   name             TEXT NOT NULL,
   phone            TEXT NOT NULL,
-  card_number      TEXT UNIQUE,
+  card_number      TEXT,
   points_balance   INTEGER NOT NULL DEFAULT 0,
   visit_count      INTEGER NOT NULL DEFAULT 0,
   current_rank_id  UUID REFERENCES public.ranks(id),
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   deleted_at       TIMESTAMPTZ,
-  UNIQUE(restaurant_id, phone)   -- per-tenant phone uniqueness
+  UNIQUE(restaurant_id, phone),        -- per-tenant phone uniqueness
+  UNIQUE(restaurant_id, card_number)   -- per-tenant card uniqueness
 );
 
 -- ---------------------------------------------------------------------------
