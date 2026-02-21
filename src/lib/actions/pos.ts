@@ -152,6 +152,7 @@ export async function lookupCustomer(
   const { data: customer, error: customerError } = await supabase
     .from('active_customers')
     .select('id, name, points_balance, visit_count, current_rank_id')
+    .eq('restaurant_id', restaurantId)
     .eq('card_number', cardNumber)
     .single()
 
