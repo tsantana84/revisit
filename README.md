@@ -15,6 +15,23 @@ Plataforma multi-tenant de fidelidade para restaurantes. Donos criam programas d
 | Gráficos | Recharts |
 | Deploy | Vercel |
 
+### Dependências
+
+| Pacote | Uso |
+|--------|-----|
+| `@clerk/nextjs` | Autenticação, componentes de login, middleware |
+| `@supabase/supabase-js` | Cliente do banco de dados |
+| `next` | Framework (App Router, React 19) |
+| `react` / `react-dom` | UI |
+| `tailwindcss` | Estilos |
+| `zod` | Validação de inputs |
+| `recharts` | Gráficos no dashboard de analytics |
+| `openai` | Geração de imagens de cartão (DALL-E) |
+| `slugify` | Geração de slugs para URLs de tenant |
+| `svix` | Verificação de webhooks do Clerk |
+
+**Dev:** `typescript`, `vitest` (testes RLS)
+
 ## Setup local
 
 ```bash
