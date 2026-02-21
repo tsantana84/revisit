@@ -63,7 +63,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **DASH-02**: Owner can view searchable customer list with rank, points, visits, total spend, and registration date
 - [ ] **DASH-03**: Owner can view full sales log: customer, card number, value, points credited, which manager registered, date and time
 - [ ] **DASH-04**: Owner can see audit log of all manager activity
-- [ ] **DASH-05**: Owner can configure program settings: program name, colors, ranks, multipliers, reward type
+- [x] **DASH-05**: Owner can configure program settings: program name, colors, ranks, multipliers, reward type
 
 ### Push Notifications
 
@@ -75,11 +75,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### White-Label
 
-- [ ] **WL-01**: Customer-facing pages (landing page, registration) are branded as the restaurant
-- [ ] **WL-02**: The customer never sees the name "REVISIT" on any customer-facing surface
+- [x] **WL-01**: Customer-facing pages (landing page, registration) are branded as the restaurant
+- [x] **WL-02**: The customer never sees the name "REVISIT" on any customer-facing surface
 - [x] **WL-03**: Each restaurant has its own URL slug (app.revisit.com/{restaurant-slug})
-- [ ] **WL-04**: Colors, logo, and program name are fully configurable per restaurant
-- [ ] **WL-05**: Digital wallet card shows only the restaurant's branding
+- [x] **WL-04**: Colors, logo, and program name are fully configurable per restaurant
+- [x] **WL-05**: Digital wallet card shows only the restaurant's branding
 
 ## v2 Requirements
 
@@ -167,17 +167,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-02 | Phase 5 | Pending |
 | DASH-03 | Phase 5 | Pending |
 | DASH-04 | Phase 5 | Pending |
-| DASH-05 | Phase 2 | Pending |
+| DASH-05 | Phase 2 | Complete |
 | PUSH-01 | Phase 4 | Pending |
 | PUSH-02 | Phase 4 | Pending |
 | PUSH-03 | Phase 4 | Pending |
 | PUSH-04 | Phase 4 | Pending |
 | PUSH-05 | Phase 4 | Pending |
-| WL-01 | Phase 2 | Pending |
-| WL-02 | Phase 2 | Pending |
+| WL-01 | Phase 2 | Complete |
+| WL-02 | Phase 2 | Complete |
 | WL-03 | Phase 2 | Complete |
-| WL-04 | Phase 2 | Pending |
-| WL-05 | Phase 2 | Pending |
+| WL-04 | Phase 2 | Complete |
+| WL-05 | Phase 2 | Complete |
 
 **Coverage:**
 - v1 requirements: 47 total

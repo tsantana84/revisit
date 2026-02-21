@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 2 of 5 (Owner Setup)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-21 — Completed 02-02 (manager creation Route Handler and owner team management page)
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-21 — Completed 02-03 (restaurant settings page: branding, program config, logo upload, ranks management)
 
-Progress: [████░░░░░░] 36%
+Progress: [████░░░░░░] 45%
 
 ## Performance Metrics
 
@@ -28,7 +28,7 @@ Progress: [████░░░░░░] 36%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation | 2 | 9 min | 4.5 min |
-| 02-owner-setup | 2 | 13 min | 6.5 min |
+| 02-owner-setup | 3 | 16 min | 5.3 min |
 
 **Recent Trend:**
 - Last 5 plans: 7 min, 2 min, 5 min
@@ -38,6 +38,7 @@ Progress: [████░░░░░░] 36%
 | Phase 01-foundation P02 | 9 | 2 tasks | 6 files |
 | Phase 02-owner-setup P01 | 5 | 2 tasks | 13 files |
 | Phase 02-owner-setup P02 | 8 | 2 tasks | 2 files |
+| Phase 02-owner-setup P03 | 3 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,10 @@ Recent decisions affecting current work:
 - [02-02]: verifyOwner() helper in route.ts reuses JWT claim check across POST and GET without duplication
 - [02-02]: email_confirm: true on auth.admin.createUser — owner sets password directly, no email verification needed for staff account
 - [02-02]: POST response includes email so team page can annotate newly created manager rows (restaurant_staff has no email column)
+- [02-03]: getAuthenticatedOwner() helper shared by all three Server Actions — avoids repeating JWT decode + role check
+- [02-03]: delete+insert strategy for ranks — simpler than upsert+reconcile at POC scale, no orphaned rows
+- [02-03]: ranks_json hidden field pattern — client serializes dynamic row state to JSON before submit; Server Action owns all validation
+- [02-03]: Zod v4 enum: requires 'as const' array + { error: string } not { errorMap: fn }; ZodError.issues not ZodError.errors
 
 ### Pending Todos
 
@@ -82,5 +87,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 02-02-PLAN.md — manager creation Route Handler and owner team management page
+Stopped at: Completed 02-03-PLAN.md — restaurant settings page with branding, program config, logo upload, and ranks management
 Resume file: None
