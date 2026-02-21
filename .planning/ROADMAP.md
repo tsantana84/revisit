@@ -46,13 +46,12 @@ Plans:
   3. An owner can create a manager account with email and password, and the manager can log in to the dedicated manager panel and nowhere else
   4. No customer-facing surface (landing page, registration form, rendered HTML, wallet card, email) contains the string "REVISIT" — only the restaurant's own branding appears
   5. Each restaurant is accessible at its own URL slug (app.revisit.com/{slug}) and configuration from one tenant is not visible to another
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: Owner auth flow — signup, login, protected dashboard route, Supabase Auth integration
-- [ ] 02-02: Manager auth flow — owner-created accounts, dedicated /manager route with role-based access
-- [ ] 02-03: Restaurant branding config — logo upload, colors, program name, slug, Supabase Storage
-- [ ] 02-04: Loyalty program configuration — earn rate, ranks, multipliers, reward type selection, point expiry settings
+- [ ] 02-01-PLAN.md — Schema migration (branding/config columns, storage bucket), service role client, owner signup/login auth flow, middleware dashboard protection, role-guarded dashboard layouts
+- [ ] 02-02-PLAN.md — Manager account creation (Route Handler with admin API), owner team management page
+- [ ] 02-03-PLAN.md — Restaurant branding config (logo, colors, program name) + loyalty program config (earn rate, reward type, point expiry, ranks with multipliers and visit thresholds)
 
 ### Phase 3: Loyalty Engine + Manager POS
 **Goal**: A manager can look up a customer by card number and register a sale in under 30 seconds, with points, rank promotion, and reward unlocking calculated automatically
@@ -115,7 +114,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/3 | In progress | - |
-| 2. Owner Setup | 0/4 | Not started | - |
+| 2. Owner Setup | 0/3 | Not started | - |
 | 3. Loyalty Engine + Manager POS | 0/5 | Not started | - |
 | 4. Apple Wallet | 0/3 | Not started | - |
 | 5. Customer Experience + Analytics | 0/3 | Not started | - |
