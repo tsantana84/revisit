@@ -33,7 +33,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Rank System
 
-- [ ] **RANK-01**: Owner can configure rank names, visit thresholds, and point multipliers
+- [x] **RANK-01**: Owner can configure rank names, visit thresholds, and point multipliers
 - [x] **RANK-02**: Default ranks are: Bronze (0+ visits, 1x), Prata (5+ visits, 1.5x), Gold (15+ visits, 2x), VIP (30+ visits, 3x)
 - [x] **RANK-03**: Customer rank is determined by total number of visits (not points)
 - [x] **RANK-04**: When a customer crosses a rank threshold, they are promoted automatically
@@ -41,11 +41,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Rewards
 
-- [ ] **RWRD-01**: Owner chooses one reward model per restaurant: cashback, free product, or progressive discount
-- [ ] **RWRD-02**: Cashback: points convert to R$ credit at the register
-- [ ] **RWRD-03**: Free product: a specific product is unlocked at a point threshold
-- [ ] **RWRD-04**: Progressive discount: percentage discount grows with rank (e.g., Bronze 5%, Gold 15%)
-- [ ] **RWRD-05**: Reward redemption is always confirmed by the manager at the panel
+- [x] **RWRD-01**: Owner chooses one reward model per restaurant: cashback, free product, or progressive discount
+- [x] **RWRD-02**: Cashback: points convert to R$ credit at the register
+- [x] **RWRD-03**: Free product: a specific product is unlocked at a point threshold
+- [x] **RWRD-04**: Progressive discount: percentage discount grows with rank (e.g., Bronze 5%, Gold 15%)
+- [x] **RWRD-05**: Reward redemption is always confirmed by the manager at the panel
 
 ### Manager Panel
 
@@ -146,16 +146,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PTS-03 | Phase 3 | Complete |
 | PTS-04 | Phase 4 | Pending |
 | PTS-05 | Phase 3 | Complete |
-| RANK-01 | Phase 3 | Pending |
+| RANK-01 | Phase 3 | Complete |
 | RANK-02 | Phase 3 | Complete |
 | RANK-03 | Phase 3 | Complete |
 | RANK-04 | Phase 3 | Complete |
 | RANK-05 | Phase 3 | Complete |
-| RWRD-01 | Phase 3 | Pending |
-| RWRD-02 | Phase 3 | Pending |
-| RWRD-03 | Phase 3 | Pending |
-| RWRD-04 | Phase 3 | Pending |
-| RWRD-05 | Phase 3 | Pending |
+| RWRD-01 | Phase 3 | Complete |
+| RWRD-02 | Phase 3 | Complete |
+| RWRD-03 | Phase 3 | Complete |
+| RWRD-04 | Phase 3 | Complete |
+| RWRD-05 | Phase 3 | Complete |
 | MGR-01 | Phase 3 | Pending |
 | MGR-02 | Phase 3 | Pending |
 | MGR-03 | Phase 3 | Pending |

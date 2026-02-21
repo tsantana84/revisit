@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 3 of 5 (Loyalty Engine + Manager POS)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-21 — Completed 03-02 (POS Server Actions: lookupCustomer, registerSale, dual-role auth)
+Last activity: 2026-02-21 — Completed 03-03 (reward Server Actions: checkRewardAvailability, registerRedemption; discount_pct in RanksForm)
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 55%
 
 ## Performance Metrics
 
@@ -41,6 +41,7 @@ Progress: [█████░░░░░] 50%
 | Phase 02-owner-setup P03 | 3 | 2 tasks | 5 files |
 | Phase 03-loyalty-engine-manager-pos P01 | 3 | 2 tasks | 5 files |
 | Phase 03-loyalty-engine-manager-pos P02 | 5 | 1 task | 1 file |
+| Phase 03-loyalty-engine-manager-pos P03 | 2 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,10 @@ Recent decisions affecting current work:
 - [Phase 03-02]: lookupCustomer is pure read (zero write operations) — safe to call on card scan without side effects
 - [Phase 03-02]: registerSale delegates entirely to register_sale RPC — no sequential DB calls, atomicity guaranteed by PostgreSQL
 - [Phase 03-02]: SaleState includes rankPromoted and newRankName — surfaces RPC promotion data for Phase 4 wallet card color change without implementing display logic here
+- [Phase 03-03]: checkRewardAvailability exported from 'use server' module — callable from POS server components or other server actions
+- [Phase 03-03]: cashback availableCredit uses Math.floor (not round) — prevents showing credit customer doesn't yet have
+- [Phase 03-03]: progressive discount uses zero-delta point_transaction for ledger auditability without balance change
+- [Phase 03-03]: getAuthenticatedManager accepts owner OR manager role — owners may test POS flow directly
 
 ### Pending Todos
 
@@ -96,5 +101,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 03-02-PLAN.md — POS Server Actions (lookupCustomer, registerSale, dual-role auth, SaleState with rank promotion data)
+Stopped at: Completed 03-03-PLAN.md — reward Server Actions (checkRewardAvailability, registerRedemption for all 3 models, discount_pct in RanksForm and RankSchema)
 Resume file: None
