@@ -80,12 +80,12 @@ Plans:
   3. An owner can view their analytics overview: total customers, total points issued, total sales logged, total revenue tracked, and rank distribution
   4. An owner can search and browse their full customer list with rank, points, visits, total spend, and registration date visible per customer
   5. An owner can view the complete sales log and manager activity audit log, showing who registered each sale and when
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: Customer landing page — SSR with middleware branding injection, white-label rendering, automated REVISIT-string scan in CI
-- [ ] 04-02: Customer registration flow — name + phone form, card creation, redirect to wallet download, sub-60-second end-to-end
-- [ ] 04-03: Owner analytics dashboard — overview metrics, customer list with search, sales log, manager audit log
+- [ ] 04-01-PLAN.md — DB migration (analytics indexes, card number RPC, total_spend) + tenant landing page (white-label marketing page with generateMetadata)
+- [ ] 04-02-PLAN.md — Customer registration flow (Server Action, modal with phone mask, card preview, iOS Apple Wallet detection)
+- [ ] 04-03-PLAN.md — Owner analytics dashboard (stat cards, donut chart, period filter), customer list (search, pagination, detail panel), logs (sales + audit tabs)
 
 ## Progress
 
