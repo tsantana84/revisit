@@ -49,13 +49,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Manager Panel
 
-- [ ] **MGR-01**: Manager panel is a dedicated route with a single-function UI
-- [ ] **MGR-02**: Manager can look up a customer by typing their card number
-- [ ] **MGR-03**: System validates the check digit and rejects invalid card numbers before lookup
-- [ ] **MGR-04**: System shows customer name and rank for visual identity confirmation
-- [ ] **MGR-05**: Manager can enter the sale value in R$
-- [ ] **MGR-06**: System shows "This will credit X points to [Name]. Confirm?" before crediting
-- [ ] **MGR-07**: Manager cannot access analytics, customer lists, configurations, or any other section
+- [x] **MGR-01**: Manager panel is a dedicated route with a single-function UI
+- [x] **MGR-02**: Manager can look up a customer by typing their card number
+- [x] **MGR-03**: System validates the check digit and rejects invalid card numbers before lookup
+- [x] **MGR-04**: System shows customer name and rank for visual identity confirmation
+- [x] **MGR-05**: Manager can enter the sale value in R$
+- [x] **MGR-06**: System shows "This will credit X points to [Name]. Confirm?" before crediting
+- [x] **MGR-07**: Manager cannot access analytics, customer lists, configurations, or any other section
 
 ### Owner Dashboard
 
@@ -156,13 +156,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RWRD-03 | Phase 3 | Complete |
 | RWRD-04 | Phase 3 | Complete |
 | RWRD-05 | Phase 3 | Complete |
-| MGR-01 | Phase 3 | Pending |
-| MGR-02 | Phase 3 | Pending |
-| MGR-03 | Phase 3 | Pending |
-| MGR-04 | Phase 3 | Pending |
-| MGR-05 | Phase 3 | Pending |
-| MGR-06 | Phase 3 | Pending |
-| MGR-07 | Phase 3 | Pending |
+| MGR-01 | Phase 3 | Complete |
+| MGR-02 | Phase 3 | Complete |
+| MGR-03 | Phase 3 | Complete |
+| MGR-04 | Phase 3 | Complete |
+| MGR-05 | Phase 3 | Complete |
+| MGR-06 | Phase 3 | Complete |
+| MGR-07 | Phase 3 | Complete |
 | DASH-01 | Phase 5 | Pending |
 | DASH-02 | Phase 5 | Pending |
 | DASH-03 | Phase 5 | Pending |

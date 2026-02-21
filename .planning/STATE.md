@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 3 of 5 (Loyalty Engine + Manager POS)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-02-21 — Completed 03-03 (reward Server Actions: checkRewardAvailability, registerRedemption; discount_pct in RanksForm)
+Plan: 4 of 4 in current phase — PHASE COMPLETE
+Status: Phase 3 complete
+Last activity: 2026-02-21 — Completed 03-04 (Manager POS page: card lookup, sale confirmation, reward flow; phase 3 all 4 plans done)
 
-Progress: [██████░░░░] 55%
+Progress: [███████░░░] 70%
 
 ## Performance Metrics
 
@@ -42,6 +42,7 @@ Progress: [██████░░░░] 55%
 | Phase 03-loyalty-engine-manager-pos P01 | 3 | 2 tasks | 5 files |
 | Phase 03-loyalty-engine-manager-pos P02 | 5 | 1 task | 1 file |
 | Phase 03-loyalty-engine-manager-pos P03 | 2 | 2 tasks | 4 files |
+| Phase 03-loyalty-engine-manager-pos P04 | 15 | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,9 @@ Recent decisions affecting current work:
 - [Phase 03-03]: cashback availableCredit uses Math.floor (not round) — prevents showing credit customer doesn't yet have
 - [Phase 03-03]: progressive discount uses zero-delta point_transaction for ledger auditability without balance change
 - [Phase 03-03]: getAuthenticatedManager accepts owner OR manager role — owners may test POS flow directly
+- [Phase 03-04]: checkRewardForCurrentManager wrapper added to rewards.ts — resolves restaurantId from JWT so POS page never needs restaurantId as a client-visible hidden input
+- [Phase 03-04]: Three-phase POS UI driven entirely by useActionState step field — 'preview' shows confirmation, 'success' shows success screen, no local phase enum needed
+- [Phase 03-04]: resetTrigger local state resets to Phase 1 on Cancelar/Nova Venda without window.location.reload — preserves React hydration
 
 ### Pending Todos
 
@@ -101,5 +105,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 03-03-PLAN.md — reward Server Actions (checkRewardAvailability, registerRedemption for all 3 models, discount_pct in RanksForm and RankSchema)
+Stopped at: Completed 03-04-PLAN.md — Manager POS page (card lookup, sale confirmation, reward flow). Phase 3 fully complete.
 Resume file: None
