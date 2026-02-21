@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useEffect, useRef, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { registerCustomer } from '@/lib/actions/customer'
 
 // ---------------------------------------------------------------------------
@@ -42,6 +43,9 @@ export function RegistrationModal({
   const [phoneDisplay, setPhoneDisplay] = useState('')
   const [phoneDigits, setPhoneDigits] = useState('')
   const [isIOS, setIsIOS] = useState(false)
+  const pathname = usePathname()
+  const router = useRouter()
+  const slug = pathname.split('/')[1]
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -52,6 +56,16 @@ export function RegistrationModal({
       dialog.close()
     }
   }, [isOpen])
+
+  // Save card number to localStorage + redirect existing customers
+  useEffect(() => {
+    if (state?.step === 'success') {
+      localStorage.setItem(`revisit:card:${slug}`, state.cardNumber)
+      if (state.isExisting) {
+        router.push(`/${slug}/card?n=${encodeURIComponent(state.cardNumber)}`)
+      }
+    }
+  }, [state, slug, router])
 
   useEffect(() => {
     const ua = navigator.userAgent
@@ -179,6 +193,15 @@ export function RegistrationModal({
                   </div>
                 </div>
               )}
+
+              <div className="text-center mb-4">
+                <a
+                  href={`/${slug}/card?n=${encodeURIComponent(state.cardNumber)}`}
+                  className="text-sm text-primary font-medium hover:underline"
+                >
+                  Consulte seu saldo a qualquer momento
+                </a>
+              </div>
 
               {state.isExisting && (
                 <div className="bg-amber-50 border border-amber-200/60 rounded-xl p-3.5 text-sm text-amber-700 mb-4 text-center">

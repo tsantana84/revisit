@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { RegistrationModal } from './RegistrationModal'
 
 interface LandingPageClientProps {
@@ -17,6 +18,16 @@ export function LandingPageClient({
   slot,
 }: LandingPageClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const pathname = usePathname()
+  const router = useRouter()
+  const slug = pathname.split('/')[1]
+
+  useEffect(() => {
+    const saved = localStorage.getItem(`revisit:card:${slug}`)
+    if (saved) {
+      router.replace(`/${slug}/card?n=${encodeURIComponent(saved)}`)
+    }
+  }, [slug, router])
 
   return (
     <>
